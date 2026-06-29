@@ -26,8 +26,9 @@
 
 ## 🔜 FASE 2 — Poner la web en tu nombre (gratis) (ESTAMOS AQUÍ)
 **Qué es:** que tu web se vea en `sportmatchapp.es`, alojada gratis (sin líos de créditos).
-- [ ] Montar hosting gratis (Cloudflare)
-- [ ] Conectar tu dominio
+- [x] Montar hosting gratis (Cloudflare Pages) → **online en `sportmatch.pages.dev`** (30 jun)
+- [x] Copia de seguridad en Git (rama main) — landing recuperada de Netlify
+- [ ] Conectar tu dominio `sportmatchapp.es` (último paso: DNS)
 - **Tú haces:** casi nada (darme acceso o seguir 2 pasos).
 - **Yo hago:** todo el montaje.
 - **Coste:** 0€.
