@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>SportMatch — Elige tu deporte</title>
+  <meta name="description" content="Elige tu deporte y encuentra con quién jugar. Filtra por nivel y por cercanía, donde estés o donde viajes." />
+  <meta name="theme-color" content="#16a34a" />
+  <link rel="icon" href="favicon.png" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.json" />
+  <!-- Vista previa al compartir (WhatsApp, Instagram, etc.) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="SportMatch — Elige tu deporte y encuentra con quién jugar" />
+  <meta property="og:description" content="Conecta con deportistas locales de tu nivel, donde vayas. Golf, pádel, tenis, running, escalada y más." />
+  <meta property="og:image" content="https://sportmatch-es.netlify.app/og.png" />
+  <meta property="og:url" content="https://sportmatch-es.netlify.app/app.html" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      /* tema neutro por defecto; cada deporte lo sobreescribe en JS */
+      --accent: #16a34a;
+      --accent-dark: #14281c;
+      --accent-light: #dcfce7;
+      --bg: #ffffff;
+      --bg2: #f9fafb;
+      --text: #111827;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); -webkit-tap-highlight-color: transparent; }
+
+    .wrap { max-width: 760px; margin: 0 auto; }
+
+    /* TOP BAR */
+    .topbar {
+      position: sticky; top: 0; z-index: 50;
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 18px;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+    }
+    .topbar .logo { font-size: 1.15rem; font-weight: 800; letter-spacing: -0.5px; }
+    .topbar .logo em { font-style: normal; color: var(--accent); }
+    .back-btn {
+      display: none; background: none; border: 1px solid var(--border);
+      width: 36px; height: 36px; border-radius: 10px; cursor: pointer;
+      font-size: 1.1rem; align-items: center; justify-content: center; color: var(--text);
+    }
+    .topbar.in-sport .back-btn { display: flex; }
+    .topbar .spacer { flex: 1; }
+    .topbar .pill-mini {
+      font-size: 0.72rem; font-weight: 700; padding: 5px 11px; border-radius: 999px;
+      background: var(--accent-light); color: var(--accent);
+    }
+    .web-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 0.8rem; font-weight: 800; white-space: nowrap;
+      padding: 8px 14px; border-radius: 999px;
+      background: var(--accent); color: #fff; text-decoration: none;
+    }
+    .web-btn:active { transform: scale(0.97); }
+
+    /* BIENVENIDA (primera visita) */
+    .welcome { position: fixed; inset: 0; z-index: 300; background: #14281c; display: none; align-items: center; justify-content: center; padding: 26px; }
+    .welcome.show { display: flex; animation: wfade 0.3s ease; }
+    @keyframes wfade { from { opacity: 0; } to { opacity: 1; } }
+    .welcome-card { max-width: 380px; width: 100%; text-align: center; color: #fff; }
+    .welcome-logo { font-size: 1.5rem; font-weight: 900; letter-spacing: -0.5px; margin-bottom: 22px; }
+    .welcome-logo em { font-style: normal; color: #4ade80; }
+    .welcome-card h2 { font-size: 1.7rem; font-weight: 900; line-height: 1.14; letter-spacing: -0.5px; margin-bottom: 14px; }
+    .welcome-card h2 em { font-style: normal; color: #4ade80; }
+    .welcome-sub { font-size: 0.95rem; color: rgba(255,255,255,0.7); line-height: 1.5; margin-bottom: 26px; }
+    .welcome-steps { text-align: left; display: grid; gap: 16px; margin-bottom: 30px; padding: 0; }
+    .welcome-steps li { display: flex; gap: 13px; align-items: center; font-size: 0.96rem; list-style: none; }
+    .welcome-steps .ic { font-size: 1.7rem; flex-shrink: 0; width: 34px; text-align: center; }
+    .welcome-btn { width: 100%; padding: 16px; background: #16a34a; color: #fff; border: none; border-radius: 13px; font-size: 1.02rem; font-weight: 800; cursor: pointer; }
+    .welcome-btn:active { transform: scale(0.98); }
+
+    /* HOME */
+    .home-hero { padding: 32px 18px 8px; }
+    .home-hero h1 { font-size: clamp(1.7rem, 5vw, 2.3rem); font-weight: 900; letter-spacing: -1px; line-height: 1.12; }
+    .home-hero h1 em { font-style: normal; color: var(--accent); }
+    .home-hero p { color: var(--muted); font-size: 0.98rem; margin-top: 10px; line-height: 1.5; }
+
+    .section-label { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); padding: 22px 18px 10px; }
+
+    .sport-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 0 18px 28px; }
+    .sport-card {
+      position: relative; overflow: hidden;
+      border-radius: 18px; padding: 18px 16px;
+      color: #fff; cursor: pointer; min-height: 118px;
+      display: flex; flex-direction: column; justify-content: space-between;
+      border: none; text-align: left;
+      transition: transform 0.15s, box-shadow 0.2s;
+    }
+    .sport-card:active { transform: scale(0.97); }
+    .sport-card .emoji { font-size: 2rem; }
+    .sport-card .nm { font-size: 1.05rem; font-weight: 800; }
+    .sport-card .sub { font-size: 0.74rem; opacity: 0.85; margin-top: 2px; }
+    .sport-card .go { position: absolute; top: 16px; right: 16px; font-size: 1.1rem; opacity: 0.9; }
+
+    /* SPORT VIEW */
+    #view-sport { display: none; }
+    .sport-hero { padding: 14px 18px 14px; color: #fff; background: var(--accent-dark); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .sport-hero .emoji { font-size: 2rem; }
+    .sport-hero h2 { font-size: 1.4rem; font-weight: 900; letter-spacing: -0.5px; }
+    .sport-hero p { display: none; }
+    .sport-hero .cta {
+      margin-left: auto; background: var(--accent); color: #fff; border: none;
+      padding: 11px 16px; border-radius: 11px; font-size: 0.85rem; font-weight: 800; cursor: pointer;
+    }
+    .sport-hero .cta:active { transform: scale(0.98); }
+
+    /* FILTERS */
+    .filters { padding: 18px 18px 6px; }
+    .filter-block { margin-bottom: 14px; }
+    .filter-block > span { display: block; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 8px; }
+    .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+    .chip {
+      padding: 8px 14px; border-radius: 999px; border: 1.5px solid var(--border);
+      background: none; color: var(--muted); font-size: 0.83rem; font-weight: 600; cursor: pointer;
+      transition: all 0.12s;
+    }
+    .chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    .result-count { padding: 4px 18px 12px; font-size: 0.83rem; color: var(--muted); font-weight: 600; }
+    .result-count b { color: var(--accent); }
+
+    /* PROFILE CARDS */
+    .cards { padding: 0 18px 40px; display: grid; gap: 14px; }
+    .pcard { border: 1.5px solid var(--border); border-radius: 18px; overflow: hidden; background: #fff; }
+    .pcard-photo { position: relative; height: 168px; overflow: hidden; }
+    .pcard-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .pcard-badge { position: absolute; top: 12px; left: 12px; background: rgba(255,255,255,0.94); color: var(--accent); font-size: 0.72rem; font-weight: 800; padding: 4px 11px; border-radius: 999px; }
+    .pcard-online { position: absolute; top: 12px; right: 12px; background: rgba(255,255,255,0.94); color: #16a34a; font-size: 0.72rem; font-weight: 700; padding: 4px 10px; border-radius: 999px; display: flex; align-items: center; gap: 5px; }
+    .online-dot { width: 6px; height: 6px; border-radius: 50%; background: #16a34a; }
+
+    .pcard.compact { display: flex; align-items: center; gap: 14px; padding: 14px; }
+    .pcard.compact .avatar { width: 54px; height: 54px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; font-weight: 800; flex-shrink: 0; }
+    .pcard.compact .pcard-body { padding: 0; flex: 1; }
+
+    .pcard-body { padding: 15px; }
+    .pcard-top { display: flex; justify-content: space-between; align-items: baseline; }
+    .pcard-name { font-size: 1rem; font-weight: 800; }
+    .pcard-age { font-size: 0.8rem; color: var(--muted); }
+    .pcard-loc { font-size: 0.77rem; color: var(--muted); margin: 3px 0 9px; }
+    .pcard-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 9px; }
+    .tag { font-size: 0.68rem; padding: 3px 9px; border-radius: 7px; background: var(--bg2); color: var(--muted); font-weight: 600; }
+    .tag-green { background: var(--accent-light); color: var(--accent); }
+    .pcard-bio { font-size: 0.8rem; color: var(--muted); font-style: italic; line-height: 1.45; margin-bottom: 11px; }
+    .pcard-btns { display: flex; gap: 8px; }
+    .btn-skip { flex: 1; padding: 9px; border: 1.5px solid var(--border); border-radius: 9px; background: none; color: var(--muted); font-size: 0.82rem; font-weight: 600; cursor: pointer; }
+    .btn-play { flex: 2; padding: 9px; background: var(--accent); border: none; border-radius: 9px; color: #fff; font-weight: 800; font-size: 0.82rem; cursor: pointer; }
+
+    /* DECK (deslizar tipo Tinder) */
+    .deck { position: relative; height: 540px; margin: 4px 18px 14px; }
+    .swipe-card {
+      position: absolute; inset: 0; background: #fff;
+      border: 1.5px solid var(--border); border-radius: 22px; overflow: hidden;
+      box-shadow: 0 12px 34px rgba(0,0,0,0.10);
+      display: flex; flex-direction: column;
+      will-change: transform; touch-action: none; user-select: none; cursor: grab;
+    }
+    .swipe-card:active { cursor: grabbing; }
+    .swipe-card .photo { position: relative; flex: 1; min-height: 0; background: var(--accent-dark); }
+    .swipe-card .photo img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+    .ph-fallback { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 5rem; font-weight: 900; color: rgba(255,255,255,0.85); }
+    .sport-badge2 { position: absolute; top: 14px; left: 14px; background: rgba(255,255,255,0.94); color: var(--accent); font-size: 0.72rem; font-weight: 800; padding: 5px 11px; border-radius: 999px; }
+    .compat { position: absolute; top: 14px; right: 14px; background: var(--accent); color: #fff; font-size: 0.8rem; font-weight: 900; padding: 6px 12px; border-radius: 999px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+    .swipe-card .info { padding: 14px 16px 16px; background: #fff; }
+    .like-stamp, .nope-stamp { position: absolute; top: 26px; font-size: 1.5rem; font-weight: 900; letter-spacing: 0.05em; padding: 6px 16px; border-radius: 12px; border: 4px solid; opacity: 0; }
+    .like-stamp { left: 22px; color: #0f172a; border-color: #0f172a; transform: rotate(-16deg); }
+    .nope-stamp { right: 22px; color: #0f172a; border-color: #0f172a; transform: rotate(16deg); }
+    .deck-actions { display: flex; gap: 10px; justify-content: center; padding: 2px 18px 34px; }
+    .deck-btn { flex: 1; padding: 14px 8px; border-radius: 13px; font-size: 0.88rem; font-weight: 800; cursor: pointer; border: 1.5px solid var(--border); background: #fff; color: var(--text); transition: transform 0.12s; }
+    .deck-btn:active { transform: scale(0.95); }
+    .deck-btn.like { background: var(--accent); color: #fff; border-color: var(--accent); flex: 1.25; }
+    .deck-btn[disabled] { opacity: 0.34; cursor: default; }
+    .deck-empty { text-align: center; padding: 60px 24px; color: var(--muted); font-size: 0.9rem; line-height: 1.5; }
+    .deck-empty button { margin-top: 14px; }
+    .tap-hint { font-size: 0.74rem; font-weight: 700; color: var(--accent); margin-top: 9px; }
+
+    /* FEED VERTICAL (estilo TikTok) */
+    .feed { height: 72vh; overflow-y: auto; scroll-snap-type: y mandatory; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; border-radius: 18px; background: #000; scrollbar-width: none; }
+    .feed::-webkit-scrollbar { display: none; }
+    .feed.empty { height: auto; background: transparent; scroll-snap-type: none; overflow: visible; }
+    .feed-card { position: relative; height: 72vh; scroll-snap-align: start; scroll-snap-stop: always; overflow: hidden; background: var(--accent-dark); display: flex; flex-direction: column; justify-content: flex-end; }
+    .feed-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .feed-fallback { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 6rem; font-weight: 900; color: rgba(255,255,255,0.85); }
+    .feed-shade { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.25) 45%, rgba(0,0,0,0) 68%); }
+    .feed-info { position: relative; z-index: 2; padding: 20px 18px 24px; color: #fff; }
+    .feed-name { font-size: 1.4rem; font-weight: 900; letter-spacing: -0.3px; }
+    .feed-loc { font-size: 0.85rem; opacity: 0.9; margin: 4px 0 10px; }
+    .feed-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+    .feed-tags .tag { background: rgba(255,255,255,0.18); color: #fff; }
+    .feed-tags .tag-green { background: var(--accent); color: #fff; }
+    .feed-bio { font-size: 0.9rem; line-height: 1.45; font-style: italic; opacity: 0.95; margin-bottom: 16px; }
+    .feed-btns { display: flex; gap: 10px; }
+    .feed-btn { flex: 1; padding: 13px; border-radius: 12px; font-size: 0.9rem; font-weight: 800; cursor: pointer; border: none; }
+    .feed-btn.ghost { background: rgba(255,255,255,0.18); color: #fff; -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+    .feed-btn.solid { background: var(--accent); color: #fff; }
+
+    /* FICHA DE COMPATIBILIDAD (radar por jugador) */
+    .radar-badge2 { display: inline-block; background: var(--accent); color: #fff; font-weight: 800; padding: 6px 16px; border-radius: 999px; font-size: 0.9rem; }
+    .radar-legend2 { display: flex; gap: 22px; justify-content: center; font-size: 0.82rem; color: var(--muted); font-weight: 600; margin-top: 2px; }
+    .radar-legend2 i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: middle; }
+
+    /* CHAT DE EJEMPLO */
+    #chat-modal { background: #fff; border-radius: 22px; width: 100%; max-width: 420px; height: 80vh; max-height: 580px; display: flex; flex-direction: column; overflow: hidden; animation: up 0.2s ease; }
+    .chat-head { display: flex; align-items: center; gap: 11px; padding: 14px 16px; border-bottom: 1px solid var(--border); }
+    .chat-avatar { width: 42px; height: 42px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0; }
+    .chat-name { font-weight: 800; font-size: 0.96rem; }
+    .chat-status { font-size: 0.72rem; color: var(--accent); font-weight: 600; }
+    .chat-body { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 9px; background: var(--bg2); }
+    .bubble { max-width: 80%; padding: 10px 13px; border-radius: 16px; font-size: 0.88rem; line-height: 1.35; }
+    .bubble.them { align-self: flex-start; background: #fff; border: 1px solid var(--border); border-bottom-left-radius: 5px; }
+    .bubble.me { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 5px; }
+    .bubble.typing { display: flex; gap: 4px; padding: 13px 14px; }
+    .bubble.typing span { width: 7px; height: 7px; border-radius: 50%; background: #cbd5e1; animation: blink 1s infinite; }
+    .bubble.typing span:nth-child(2) { animation-delay: 0.2s; }
+    .bubble.typing span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes blink { 0%, 60%, 100% { opacity: 0.3; } 30% { opacity: 1; } }
+    .chat-foot { padding: 12px 16px; border-top: 1px solid var(--border); }
+
+    /* MODAL */
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); z-index: 200; align-items: center; justify-content: center; padding: 18px; }
+    .overlay.open { display: flex; }
+    .modal { background: #fff; border-radius: 22px; padding: 26px 22px; max-width: 420px; width: 100%; max-height: 90vh; overflow-y: auto; animation: up 0.2s ease; }
+    @keyframes up { from { opacity:0; transform: translateY(16px); } to { opacity:1; transform: translateY(0); } }
+    .modal-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+    .modal-head h3 { font-size: 1.2rem; font-weight: 900; letter-spacing: -0.3px; }
+    .modal-close { background: none; border: none; font-size: 1.3rem; color: var(--muted); cursor: pointer; line-height: 1; }
+    .modal-sub { font-size: 0.85rem; color: var(--muted); margin-bottom: 18px; line-height: 1.45; }
+
+    /* SURVEY */
+    .q { margin-bottom: 18px; }
+    .q-label { font-size: 0.88rem; font-weight: 800; margin-bottom: 9px; }
+    .q-opts { display: grid; gap: 8px; }
+    .q-opt { text-align: left; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 12px; background: #fff; font-size: 0.88rem; font-weight: 600; color: var(--text); cursor: pointer; transition: all 0.12s; }
+    .q-opt.sel { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
+
+    .level-result { text-align: center; padding: 6px 0 4px; }
+    .level-unit { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 6px; }
+    .level-badge { display: inline-block; background: var(--accent); color: #fff; font-weight: 900; font-size: 1.35rem; padding: 10px 24px; border-radius: 999px; margin-bottom: 6px; }
+    .level-badge + p, #level-text { margin-top: 8px; }
+    .level-result p { color: var(--muted); font-size: 0.88rem; line-height: 1.5; }
+
+    .field { margin-bottom: 12px; }
+    .field label { display: block; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 5px; }
+    .field input { width: 100%; padding: 12px 14px; background: var(--bg2); border: 1.5px solid var(--border); border-radius: 11px; font-size: 0.92rem; outline: none; }
+    .field input:focus { border-color: var(--accent); }
+    .modal-btn { width: 100%; padding: 14px; background: var(--accent); color: #fff; border: none; border-radius: 12px; font-weight: 900; font-size: 0.98rem; cursor: pointer; }
+    .modal-btn[disabled] { opacity: 0.4; }
+    .modal-fine { text-align: center; font-size: 0.72rem; color: #b8bdc7; margin-top: 10px; }
+
+    .success { display: none; text-align: center; padding: 10px 0; }
+    .success .ic { font-size: 3rem; margin-bottom: 8px; }
+    .success h3 { font-size: 1.2rem; font-weight: 900; margin-bottom: 8px; }
+    .success p { font-size: 0.86rem; color: var(--muted); line-height: 1.5; }
+
+    footer { border-top: 1px solid var(--border); padding: 22px 18px 32px; text-align: center; font-size: 0.76rem; color: var(--muted); }
+    footer a { color: var(--accent); text-decoration: none; font-weight: 700; }
+  </style>
+</head>
+<body>
+
+<!-- BIENVENIDA (solo la primera vez) -->
+<div class="welcome" id="welcome">
+  <div class="welcome-card">
+    <div class="welcome-logo">Sport<em>Match</em></div>
+    <h2>Viajas a otra ciudad.<br>Quieres jugar.<br><em>No conoces a nadie.</em></h2>
+    <p class="welcome-sub">SportMatch te conecta con deportistas locales de tu nivel.</p>
+    <ul class="welcome-steps">
+      <li><span class="ic">🏅</span><span>Elige tu deporte y di tu nivel</span></li>
+      <li><span class="ic">📍</span><span>Gente compatible cerca o en tu próximo viaje</span></li>
+      <li><span class="ic">🤝</span><span>Quedáis y jugáis</span></li>
+    </ul>
+    <button class="welcome-btn" onclick="closeWelcome()">Empezar →</button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="topbar" id="topbar">
+    <button class="back-btn" onclick="goHome()" aria-label="Volver">←</button>
+    <div class="logo">Sport<em>Match</em></div>
+    <div class="spacer"></div>
+    <a class="web-btn" href="index.html">← Volver a la web</a>
+  </div>
+
+  <!-- HOME -->
+  <div id="view-home">
+    <div class="home-hero">
+      <h1>Elige tu deporte.<br><em>Encuentra con quién jugar.</em></h1>
+      <p>Cada deporte, su mundo. Filtra por nivel y por cercanía, donde estés o donde viajes.</p>
+    </div>
+    <div class="section-label">Deportes</div>
+    <div class="sport-grid" id="sport-grid"></div>
+  </div>
+
+  <!-- SPORT -->
+  <div id="view-sport">
+    <div class="sport-hero">
+      <div class="emoji" id="sh-emoji">⛳</div>
+      <h2 id="sh-name">Golf</h2>
+      <p id="sh-tagline"></p>
+      <button class="cta" id="sh-cta" onclick="openSurvey()">Apuntarme →</button>
+    </div>
+
+    <div class="filters">
+      <div class="filter-block">
+        <span>Nivel</span>
+        <div class="chips" id="filter-level">
+          <button class="chip active" data-lv="all">Cualquiera</button>
+          <button class="chip" data-lv="1">Principiante</button>
+          <button class="chip" data-lv="2">Intermedio</button>
+          <button class="chip" data-lv="3">Avanzado</button>
+        </div>
+      </div>
+      <div class="filter-block">
+        <span>Distancia</span>
+        <div class="chips" id="filter-dist">
+          <button class="chip" data-km="5">5 km</button>
+          <button class="chip" data-km="25">25 km</button>
+          <button class="chip active" data-km="100">100 km</button>
+          <button class="chip" data-km="9999">Cualquiera</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="result-count" id="result-count"></div>
+    <div class="feed" id="feed"></div>
+  </div>
+
+  <footer>
+    SportMatch · Beta · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
+  </footer>
+</div>
+
+<!-- MODAL SURVEY + WAITLIST -->
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div id="modal-body">
+      <div class="modal-head">
+        <h3 id="modal-title">¿Cuál es tu nivel?</h3>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <p class="modal-sub" id="modal-sub">Responde 3 preguntas rápidas y calculamos tu nivel.</p>
+
+      <!-- paso 1: encuesta -->
+      <div id="step-survey"></div>
+
+      <!-- paso 2: resultado + email -->
+      <div id="step-signup" style="display:none">
+        <div class="level-result">
+          <div class="level-unit" id="level-unit">NIVEL</div>
+          <div class="level-badge" id="level-badge">Intermedio</div>
+          <p id="level-text"></p>
+        </div>
+        <form id="wl-form" name="lista-espera" method="POST" action="/" data-netlify="true" netlify-honeypot="bot-field" target="sm-iframe" style="margin-top:18px">
+          <input type="hidden" name="form-name" value="lista-espera" />
+          <input type="hidden" name="bot-field" style="display:none" />
+          <input type="hidden" name="deporte" id="f-deporte" />
+          <input type="hidden" name="nivel" id="f-nivel" />
+          <div class="field"><label>Nombre</label><input type="text" name="nombre" placeholder="Tu nombre" required /></div>
+          <div class="field"><label>Email</label><input type="email" name="email" placeholder="tu@email.com" required /></div>
+          <button type="submit" class="modal-btn" id="wl-btn">Apuntarme a la lista →</button>
+          <p class="modal-fine">Lista de espera de la beta. Te avisamos cuando haya gente cerca. Sin spam.</p>
+        </form>
+      </div>
+    </div>
+
+    <div class="success" id="success">
+      <div class="ic">✅</div>
+      <h3>¡Estás en la lista!</h3>
+      <p id="success-text">SportMatch está en fase beta: estamos reuniendo a los primeros jugadores en cada ciudad. Te escribiremos en cuanto haya gente con quien jugar cerca de ti.</p>
+      <button class="modal-btn" style="margin-top:18px" onclick="shareLevel()">🔥 Comparte tu nivel y reta a tus amigos</button>
+      <p class="modal-fine">Genera tu tarjeta y súbela a tu story. Cuantos más seáis, antes jugáis.</p>
+    </div>
+  </div>
+</div>
+
+<!-- FICHA DE JUGADOR (radar de compatibilidad) -->
+<div class="overlay" id="profile-overlay" onclick="if(event.target===this)closeProfile()">
+  <div class="modal" id="profile-modal"></div>
+</div>
+
+<!-- CHAT DE EJEMPLO -->
+<div class="overlay" id="chat-overlay" onclick="if(event.target===this)closeChat()">
+  <div id="chat-modal"></div>
+</div>
+
+<iframe name="sm-iframe" id="sm-iframe" style="display:none" title="envío"></iframe>
+
+<script>
+  /* ---------- DATOS ---------- */
+  const SPORTS = [
+    { key:'golf', name:'Golf', emoji:'⛳', accent:'#15803d', dark:'#0f2e1c', light:'#dcfce7',
+      tagline:'Compañeros de green por hándicap, ritmo e idioma.', levelName:'Hándicap',
+      profiles:[
+        { name:'Carlos M.', age:38, loc:'Madrid · viaja a Marbella 20–25 jun', lv:2, km:8, tags:['Hándicap 12','Ritmo relajado','Mañanas','🇬🇧'], bio:'Busco compañero de green para no jugar solo cuando viajo por trabajo.', img:'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=600&q=75' },
+        { name:'Ana P.', age:44, loc:'Madrid · disponible localmente', lv:1, km:18, tags:['Hándicap 20','9 hoyos','Finde'], bio:'Socia de club, siempre dispuesta a jugar con viajeros que visiten Madrid.' },
+      ] },
+    { key:'padel', name:'Pádel', emoji:'🎾', accent:'#0ea5e9', dark:'#0c2738', light:'#e0f2fe',
+      tagline:'Encuentra pareja o rivales de tu nivel, donde vayas.', levelName:'Nivel',
+      profiles:[
+        { name:'Laura G.', age:31, loc:'Barcelona · disponible en Madrid jun', lv:2, km:12, tags:['Nivel medio','Mixto','Tardes','🇪🇸'], bio:'Cuando viajo nunca tengo con quién jugar al pádel. Aquí para cambiar eso.', img:'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=600&q=75' },
+        { name:'Dani R.', age:27, loc:'Madrid · disponible localmente', lv:3, km:6, tags:['Avanzado','Competitivo','Noches'], bio:'Busco partidos serios entre semana. Nivel alto.' },
+      ] },
+    { key:'tenis', name:'Tenis', emoji:'🎾', accent:'#ca8a04', dark:'#33280a', light:'#fef9c3',
+      tagline:'Singles o dobles, rival a tu medida.', levelName:'Nivel',
+      profiles:[
+        { name:'Javier S.', age:29, loc:'Valencia · viaja a Madrid 19–21 jun', lv:3, km:10, tags:['Avanzado','Singles','Flexible','🇬🇧'], bio:'Viajo cada semana a Madrid. El tenis es mi forma de desconectar. Busco rival serio.', img:'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=600&q=75' },
+        { name:'Marta C.', age:34, loc:'Madrid · fines de semana', lv:1, km:20, tags:['Principiante','Dobles','Sábados'], bio:'Vuelvo a jugar después de años. Busco gente para empezar sin presión.' },
+      ] },
+    { key:'running', name:'Running', emoji:'🏃', accent:'#e11d48', dark:'#3a0d1a', light:'#ffe4e6',
+      tagline:'Corre acompañado por pace, distancia y ruta.', levelName:'Pace',
+      profiles:[
+        { name:'Marcos R.', age:35, loc:'Madrid · viaja a Sevilla 18–22 jun', lv:2, km:5, tags:['Pace 5:30','10K','Mañanas','🇪🇸'], bio:'Salgo a correr en cada ciudad que visito. Prefiero hacerlo con alguien local.', img:'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=75' },
+        { name:'Elena T.', age:26, loc:'Madrid · entre semana', lv:3, km:14, tags:['Pace 4:40','Series','Tardes'], bio:'Preparo media maratón. Busco gente para tiradas largas el finde.' },
+      ] },
+    { key:'senderismo', name:'Senderismo', emoji:'🥾', accent:'#4d7c0f', dark:'#22300c', light:'#ecfccb',
+      tagline:'Rutas y montaña por nivel, duración y terreno.', levelName:'Nivel',
+      profiles:[
+        { name:'Sofía L.', age:33, loc:'Madrid · fines de semana', lv:2, km:9, tags:['Nivel medio','Sierra','Sábados'], bio:'Organizo rutas por la sierra casi todos los sábados. Siempre hay sitio para alguien nuevo.', img:'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&q=75' },
+        { name:'Hugo M.', age:30, loc:'Madrid · viaja a Picos de Europa jul', lv:3, km:30, tags:['Exigente','Alta montaña','Varios días'], bio:'Busco gente con buen nivel para travesías de fin de semana.' },
+      ] },
+    { key:'esqui', name:'Esquí', emoji:'⛷️', accent:'#0284c7', dark:'#0c2738', light:'#e0f2fe',
+      tagline:'Compañeros de pista o fuera de pista esta temporada.', levelName:'Nivel',
+      profiles:[
+        { name:'Diego F.', age:41, loc:'Madrid · viaja a Baqueira esta temporada', lv:3, km:25, tags:['Avanzado','Fuera de pista','Jornada completa'], bio:'Voy a Baqueira casi cada temporada pero siempre solo. Busco alguien con buen nivel.', img:'https://images.unsplash.com/photo-1551524559-8af4e6624178?w=600&q=75' },
+        { name:'Clara B.', age:28, loc:'Madrid · finde en Navacerrada', lv:1, km:15, tags:['Principiante','Pista azul','Sábados'], bio:'Aprendiendo este año. Busco gente para ir juntos y no agobiarme.' },
+      ] },
+    { key:'escalada', name:'Escalada', emoji:'🧗', accent:'#b45309', dark:'#33210c', light:'#fde8d4',
+      tagline:'Compañero/a de cuerda en rocódromo o roca.', levelName:'Grado',
+      profiles:[
+        { name:'Nora V.', age:26, loc:'Madrid · viaja a Chulilla este finde', lv:2, km:7, tags:['6c+','Deportiva','Tardes','🇬🇧'], bio:'Escalo en cada viaje. Busco compañero/a de cuerda para rocódromo o roca.', img:'https://images.unsplash.com/photo-1522163182402-834f871fd851?w=600&q=75' },
+        { name:'Iván P.', age:31, loc:'Madrid · rocódromo entre semana', lv:3, km:4, tags:['7a','Boulder','Noches'], bio:'Asegurador fiable. Busco gente para proyectar fuerte en plástico.' },
+      ] },
+    { key:'baloncesto', name:'Baloncesto', emoji:'🏀', accent:'#ea580c', dark:'#331608', light:'#ffedd5',
+      tagline:'Pachangas y 3x3 con gente de tu nivel.', levelName:'Nivel',
+      profiles:[
+        { name:'Leo M.', age:24, loc:'Madrid · pistas de barrio', lv:2, km:3, tags:['Intermedio','3x3','Tardes'], bio:'Siempre faltan jugadores en la pista. Busco gente fija para echar partidos.', img:'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=600&q=75' },
+        { name:'Paula R.', age:22, loc:'Madrid · viaja por la uni', lv:1, km:22, tags:['Principiante','Social','Finde'], bio:'Acabo de mudarme y no conozco a nadie con quien jugar. ¡Ayuda!' },
+      ] },
+  ];
+
+  const SPORT_BY_KEY = Object.fromEntries(SPORTS.map(s => [s.key, s]));
+
+  // Perfiles extra (con avatar, sin foto) para tener baraja con la que deslizar.
+  // [nombre, edad, ubicación, nivel(1-3), km, tags, bio]
+  const EXTRA = {
+    golf: [
+      ['Pablo D.', 33, 'Madrid · fines de semana', 2, 12, ['Hándicap 16', 'Tardes'], 'Juego los sábados, busco un cuarto fijo para el grupo.'],
+      ['Marta S.', 29, 'Madrid · entre semana', 1, 9, ['Hándicap 24', 'Mañanas'], 'Empezando en serio este año, busco gente con paciencia.'],
+      ['Luis A.', 47, 'Toledo · viaja a Madrid', 3, 28, ['Hándicap 8', 'Competitivo'], 'Nivel alto, me gustan los partidos serios.'],
+    ],
+    padel: [
+      ['Sara M.', 28, 'Madrid · tardes', 2, 7, ['Nivel 3', 'Mixto'], 'Busco pareja para liga mixta entre semana.'],
+      ['Jorge L.', 35, 'Getafe · finde', 1, 15, ['Nivel 2', 'Sábados'], 'Vuelvo al pádel tras una lesión, sin prisa.'],
+      ['Nuria F.', 31, 'Madrid · viaja a Valencia', 3, 24, ['Nivel 5', 'Competición'], 'Juego torneos, busco rival de buen nivel.'],
+    ],
+    tenis: [
+      ['Álvaro R.', 26, 'Madrid · entre semana', 2, 8, ['Intermedio', 'Singles'], 'Busco gente para pelotear y jugar sets sin presión.'],
+      ['Carmen V.', 38, 'Alcobendas · finde', 1, 14, ['Iniciación', 'Dobles'], 'Aprendiendo, busco gente maja para empezar.'],
+      ['Toni G.', 30, 'Madrid · viaja por trabajo', 3, 22, ['Competición', 'Flexible'], 'Federado, busco partidos de nivel donde viaje.'],
+    ],
+    running: [
+      ['Bea N.', 27, 'Madrid · mañanas', 2, 5, ['Pace 5:45', '10K'], 'Salgo antes de trabajar, mejor con compañía.'],
+      ['Raúl P.', 34, 'Madrid · tardes', 3, 11, ['Pace 4:30', 'Series'], 'Preparo maratón, busco grupo para rodajes largos.'],
+      ['Lucía H.', 23, 'Madrid · finde', 1, 18, ['Pace 6:30', '5K'], 'Empezando a correr, busco gente sin prisa.'],
+    ],
+    senderismo: [
+      ['Marc T.', 36, 'Madrid · sábados', 2, 10, ['Media montaña', 'Sierra'], 'Rutas por la sierra cada finde, hay sitio.'],
+      ['Elena D.', 41, 'Madrid · viaja a Pirineos', 3, 30, ['Alta montaña', 'Varios días'], 'Busco gente con nivel para travesías.'],
+      ['Pau R.', 25, 'Madrid · domingos', 1, 13, ['Paseos', 'Mañanas'], 'Rutas tranquilas para desconectar.'],
+    ],
+    esqui: [
+      ['Inés M.', 29, 'Madrid · finde en Navacerrada', 2, 16, ['Roja', 'Sábados'], 'Voy casi cada finde en temporada, busco compañía.'],
+      ['Carlos V.', 44, 'Madrid · viaja a Formigal', 3, 27, ['Negra', 'Jornada completa'], 'Busco gente de buen nivel para fuera de pista.'],
+      ['Laia B.', 24, 'Madrid · aprendiendo', 1, 12, ['Verde/Azul', 'Finde'], 'Primera temporada, busco gente paciente.'],
+    ],
+    escalada: [
+      ['Marc S.', 28, 'Madrid · rocódromo', 2, 6, ['6b', 'Tardes'], 'Busco compañero de cuerda fijo entre semana.'],
+      ['Andrea P.', 31, 'Madrid · viaja a La Pedriza', 3, 19, ['7a', 'Roca'], 'Proyectando en roca, busco asegurador fiable.'],
+      ['Hugo L.', 23, 'Madrid · boulder', 1, 8, ['V3', 'Noches'], 'Empezando en boulder, busco gente para ir.'],
+    ],
+    baloncesto: [
+      ['Sergio M.', 22, 'Madrid · pistas de barrio', 2, 4, ['Habitual', '3x3'], 'Quedamos a echar partidos, faltan jugadores.'],
+      ['Laura D.', 25, 'Madrid · finde', 1, 16, ['Recreativo', 'Social'], 'Acabo de llegar a la ciudad, busco con quién jugar.'],
+      ['Dani F.', 27, 'Alcorcón · entre semana', 3, 21, ['Federado', 'Competición'], 'Juego en liga local, busco buen nivel.'],
+    ],
+  };
+  Object.keys(EXTRA).forEach(k => {
+    SPORT_BY_KEY[k].profiles.push(...EXTRA[k].map(a => ({
+      name: a[0], age: a[1], loc: a[2], lv: a[3], km: a[4], tags: a[5], bio: a[6]
+    })));
+  });
+
+  let current = null;
+  let filterLv = 'all', filterKm = 100;
+
+  /* ---------- HOME ---------- */
+  function renderHome() {
+    document.getElementById('sport-grid').innerHTML = SPORTS.map(s => `
+      <button class="sport-card" style="background:${s.dark}" onclick="openSport('${s.key}')">
+        <span class="go">→</span>
+        <span class="emoji">${s.emoji}</span>
+        <div>
+          <div class="nm" style="color:#fff">${s.name}</div>
+          <div class="sub">${s.profiles.length} disponibles · ${s.tagline.split(' ').slice(0,4).join(' ')}…</div>
+        </div>
+      </button>`).join('');
+  }
+
+  /* ---------- TEMA ---------- */
+  function applyTheme(s) {
+    const r = document.body.style;
+    r.setProperty('--accent', s.accent);
+    r.setProperty('--accent-dark', s.dark);
+    r.setProperty('--accent-light', s.light);
+  }
+  function clearTheme() {
+    const r = document.body.style;
+    r.setProperty('--accent', '#16a34a');
+    r.setProperty('--accent-dark', '#14281c');
+    r.setProperty('--accent-light', '#dcfce7');
+  }
+
+  /* ---------- SPORT VIEW ---------- */
+  function openSport(key) {
+    current = SPORT_BY_KEY[key];
+    applyTheme(current);
+    document.getElementById('sh-emoji').textContent = current.emoji;
+    document.getElementById('sh-name').textContent = current.name;
+    document.getElementById('sh-tagline').textContent = current.tagline;
+    document.getElementById('topbar').classList.add('in-sport');
+    filterLv = 'all'; filterKm = 100;
+    resetChips();
+    renderCards();
+    document.getElementById('view-home').style.display = 'none';
+    document.getElementById('view-sport').style.display = 'block';
+    window.scrollTo(0, 0);
+  }
+
+  function goHome() {
+    clearTheme();
+    document.getElementById('topbar').classList.remove('in-sport');
+    document.getElementById('view-sport').style.display = 'none';
+    document.getElementById('view-home').style.display = 'block';
+    window.scrollTo(0, 0);
+  }
+
+  function resetChips() {
+    document.querySelectorAll('#filter-level .chip').forEach(c => c.classList.toggle('active', c.dataset.lv === 'all'));
+    document.querySelectorAll('#filter-dist .chip').forEach(c => c.classList.toggle('active', c.dataset.km === '100'));
+  }
+
+  let FEED = [];
+
+  function renderCards() {
+    FEED = current.profiles.filter(p =>
+      (filterLv === 'all' || String(p.lv) === filterLv) && p.km <= filterKm
+    );
+    renderFeed();
+  }
+
+  function hashStr(s) { let h = 0; for (let i = 0; i < s.length; i++) { h = (h << 5) - h + s.charCodeAt(i); h |= 0; } return Math.abs(h); }
+
+  function feedCardHTML(p, i) {
+    const compat = 80 + (hashStr(p.name + current.key) % 18);
+    const tags = p.tags.map((t, k) => `<span class="tag ${k === 0 ? 'tag-green' : ''}">${t}</span>`).join('');
+    const media = p.img
+      ? `<img class="feed-img" src="${p.img}" alt="${current.name}" />`
+      : `<div class="feed-fallback">${p.name.charAt(0)}</div>`;
+    return `<div class="feed-card">
+      ${media}
+      <div class="feed-shade"></div>
+      <span class="sport-badge2">${current.emoji} ${current.name}</span>
+      <span class="compat">${compat}% match</span>
+      <div class="feed-info">
+        <div class="feed-name">${p.name} · ${p.age}</div>
+        <div class="feed-loc">📍 ${p.loc}</div>
+        <div class="feed-tags">${tags}</div>
+        <div class="feed-bio">"${p.bio}"</div>
+        <div class="feed-btns">
+          <button class="feed-btn ghost" onclick="openProfile(FEED[${i}])">📊 Compatibilidad</button>
+          <button class="feed-btn solid" onclick="openSurvey()">${current.emoji} Jugar</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // feed vertical estilo TikTok: scroll-snap nativo (fluido, deslizar ↑ ↓)
+  function renderFeed() {
+    const el = document.getElementById('feed');
+    document.getElementById('result-count').innerHTML = FEED.length
+      ? `<b>${FEED.length}</b> ${FEED.length === 1 ? 'persona compatible' : 'personas compatibles'} · desliza ↑ ↓`
+      : '';
+    if (!FEED.length) {
+      el.classList.add('empty');
+      el.innerHTML = `<div class="deck-empty">No hay perfiles con estos filtros.<br>Amplía la distancia o el nivel, o apúntate y te avisamos cuando haya más.<br><button class="cta" style="background:var(--accent);color:#fff;border:none;padding:12px 20px;border-radius:11px;font-weight:800;cursor:pointer;margin-top:14px" onclick="openSurvey()">Apuntarme →</button></div>`;
+      return;
+    }
+    el.classList.remove('empty');
+    el.innerHTML = FEED.map((p, i) => feedCardHTML(p, i)).join('');
+    el.scrollTop = 0;
+  }
+
+  document.getElementById('filter-level').addEventListener('click', e => {
+    if (!e.target.classList.contains('chip')) return;
+    document.querySelectorAll('#filter-level .chip').forEach(c => c.classList.remove('active'));
+    e.target.classList.add('active');
+    filterLv = e.target.dataset.lv;
+    renderCards();
+  });
+  document.getElementById('filter-dist').addEventListener('click', e => {
+    if (!e.target.classList.contains('chip')) return;
+    document.querySelectorAll('#filter-dist .chip').forEach(c => c.classList.remove('active'));
+    e.target.classList.add('active');
+    filterKm = Number(e.target.dataset.km);
+    renderCards();
+  });
+
+  /* ---------- ENCUESTA DE NIVEL ---------- */
+  // Encuesta específica por deporte. La 1ª pregunta es la métrica real del deporte
+  // (3er valor = etiqueta corta para la tarjeta). La 2ª afina por frecuencia/estilo.
+  const SURVEYS = {
+    golf: [
+      { q: '¿Cuál es tu hándicap?', opts: [['Sin hándicap todavía', 1, 'Sin hándicap'], ['Entre 18 y 36', 2, '18-36'], ['Menos de 18', 3, '<18']] },
+      { q: '¿Con qué frecuencia juegas?', opts: [['De vez en cuando', 1], ['Cada semana', 2], ['Varias veces por semana', 3]] },
+    ],
+    padel: [
+      { q: '¿Cuál es tu nivel? (escala 1 a 7)', opts: [['1 a 2 · empezando', 1, 'Nivel 1-2'], ['3 a 4 · intermedio', 2, 'Nivel 3-4'], ['5 a 7 · avanzado', 3, 'Nivel 5-7']] },
+      { q: '¿Cómo sueles jugar?', opts: [['Por diversión', 1], ['Partidos regulares', 2], ['Competición', 3]] },
+    ],
+    tenis: [
+      { q: '¿Cómo describirías tu juego?', opts: [['Iniciación', 1, 'Iniciación'], ['Peloteo y partidos', 2, 'Intermedio'], ['Competición / federado', 3, 'Competición']] },
+      { q: '¿Con qué frecuencia juegas?', opts: [['De vez en cuando', 1], ['Cada semana', 2], ['Varias veces por semana', 3]] },
+    ],
+    running: [
+      { q: '¿Tu ritmo por kilómetro?', opts: [['Más de 6:30 (trote suave)', 1, '+6:30/km'], ['Entre 5:30 y 6:30', 2, '5:30-6:30'], ['Menos de 5:30 (rápido)', 3, '<5:30/km']] },
+      { q: '¿Qué distancia sueles hacer?', opts: [['Hasta 5K', 1], ['Entre 5K y 10K', 2], ['Más de 10K / maratón', 3]] },
+    ],
+    senderismo: [
+      { q: '¿Qué rutas sueles hacer?', opts: [['Paseos suaves', 1, 'Paseos'], ['Media montaña, varias horas', 2, 'Media montaña'], ['Alta montaña / largas', 3, 'Alta montaña']] },
+      { q: '¿Cuánto desnivel aguantas?', opts: [['Poco', 1], ['Moderado', 2], ['Mucho (+1000 m)', 3]] },
+    ],
+    esqui: [
+      { q: '¿Qué pistas bajas con soltura?', opts: [['Verdes y azules', 1, 'Verde/Azul'], ['Rojas', 2, 'Roja'], ['Negras / fuera de pista', 3, 'Negra']] },
+      { q: '¿Cuánta experiencia tienes?', opts: [['1ª o 2ª temporada', 1], ['Varias temporadas', 2], ['Esquiador habitual', 3]] },
+    ],
+    escalada: [
+      { q: '¿Qué grado encadenas?', opts: [['6a o menos', 1, '≤6a'], ['Entre 6a y 6c', 2, '6a-6c'], ['7a o más', 3, '7a+']] },
+      { q: '¿Dónde escalas?', opts: [['Rocódromo a veces', 1], ['Rocódromo habitual', 2], ['Roca / proyectos', 3]] },
+    ],
+    baloncesto: [
+      { q: '¿Cuál es tu nivel?', opts: [['Recreativo, por diversión', 1, 'Recreativo'], ['Juego a menudo', 2, 'Habitual'], ['Federado / competición', 3, 'Federado']] },
+      { q: '¿Cómo te ves en pista?', opts: [['Aprendiendo', 1], ['Me defiendo', 2], ['Buen nivel', 3]] },
+    ],
+  };
+  function survey() { return SURVEYS[current.key]; }
+  let answers = [];
+  let lastLevel = null;
+
+  function openSurvey() {
+    answers = [];
+    document.getElementById('modal-title').textContent = '¿Cuál es tu nivel en ' + current.name + '?';
+    document.getElementById('modal-sub').textContent = 'Responde 3 preguntas rápidas y calculamos tu nivel para emparejarte bien.';
+    document.getElementById('step-survey').style.display = 'block';
+    document.getElementById('step-signup').style.display = 'none';
+    document.getElementById('success').style.display = 'none';
+    document.getElementById('modal-body').style.display = 'block';
+    renderSurvey();
+    document.getElementById('overlay').classList.add('open');
+  }
+
+  function renderSurvey() {
+    document.getElementById('step-survey').innerHTML = survey().map((item, qi) => `
+      <div class="q">
+        <div class="q-label">${qi + 1}. ${item.q}</div>
+        <div class="q-opts">
+          ${item.opts.map(([label, val]) => `
+            <button class="q-opt ${answers[qi] === val ? 'sel' : ''}" onclick="answer(${qi}, ${val})">${label}</button>`).join('')}
+        </div>
+      </div>`).join('');
+  }
+
+  function answer(qi, val) {
+    answers[qi] = val;
+    renderSurvey();
+    if (answers.filter(a => a).length === survey().length) setTimeout(showResult, 250);
+  }
+
+  function showResult() {
+    const q = survey();
+    const score = answers.reduce((a, b) => a + b, 0) / q.length; // 1..3
+    let label, n;
+    if (score < 1.7) { label = 'Principiante'; n = 1; }
+    else if (score < 2.4) { label = 'Intermedio'; n = 2; }
+    else { label = 'Avanzado'; n = 3; }
+    // métrica específica del deporte (3er valor de la opción elegida en la 1ª pregunta)
+    const opt0 = q[0].opts.find(o => o[1] === answers[0]);
+    const metric = (opt0 && opt0[2]) ? opt0[2] : label;
+    lastLevel = { label, n, metric, unit: current.levelName };
+    document.getElementById('level-unit').textContent = current.levelName.toUpperCase();
+    document.getElementById('level-badge').textContent = metric;
+    document.getElementById('level-text').textContent =
+      `Nivel ${label.toLowerCase()} (${n}/3) en ${current.name.toLowerCase()}. Apúntate y te avisaremos cuando haya jugadores compatibles cerca de ti.`;
+    document.getElementById('f-deporte').value = current.name;
+    document.getElementById('f-nivel').value = `${current.levelName} ${metric} · ${label} (${n}/3)`;
+    document.getElementById('modal-title').textContent = '¡Listo, ' + current.name.toLowerCase() + '!';
+    document.getElementById('modal-sub').style.display = 'none';
+    document.getElementById('step-survey').style.display = 'none';
+    document.getElementById('step-signup').style.display = 'block';
+  }
+
+  function closeModal() {
+    document.getElementById('overlay').classList.remove('open');
+    document.getElementById('modal-sub').style.display = 'block';
+  }
+
+  /* ---------- ENVÍO (robusto, POST nativo en iframe) ---------- */
+  let wlSubmitted = false;
+  document.getElementById('wl-form').addEventListener('submit', function() {
+    wlSubmitted = true;
+    const b = document.getElementById('wl-btn');
+    b.textContent = 'Enviando…'; b.disabled = true;
+  });
+  document.getElementById('sm-iframe').addEventListener('load', function() {
+    if (!wlSubmitted) return;
+    document.getElementById('success-text').textContent =
+      'Te hemos apuntado en ' + current.name.toLowerCase() + '. SportMatch está en fase beta: estamos reuniendo a los primeros jugadores en cada ciudad. Te escribiremos en cuanto haya gente con quien jugar cerca de ti.';
+    document.getElementById('modal-body').style.display = 'none';
+    document.getElementById('success').style.display = 'block';
+  });
+
+  /* ---------- TARJETA COMPARTIBLE "MI NIVEL" ---------- */
+  function roundRect(x, rx, ry, w, h, r) {
+    x.beginPath();
+    x.moveTo(rx + r, ry);
+    x.arcTo(rx + w, ry, rx + w, ry + h, r);
+    x.arcTo(rx + w, ry + h, rx, ry + h, r);
+    x.arcTo(rx, ry + h, rx, ry, r);
+    x.arcTo(rx, ry, rx + w, ry, r);
+    x.closePath();
+  }
+
+  function renderLevelCanvas() {
+    const s = current, c = document.createElement('canvas');
+    c.width = 1080; c.height = 1920;
+    const x = c.getContext('2d');
+    x.fillStyle = s.dark; x.fillRect(0, 0, 1080, 1920);
+    x.fillStyle = s.accent; x.fillRect(0, 0, 1080, 16);
+    x.textAlign = 'center';
+
+    x.fillStyle = '#fff';
+    x.font = '700 58px -apple-system, Arial, sans-serif';
+    x.fillText('SportMatch', 540, 210);
+
+    x.font = '300px -apple-system, Arial, sans-serif';
+    x.fillText(s.emoji, 540, 660);
+
+    x.fillStyle = '#fff';
+    x.font = '800 84px -apple-system, Arial, sans-serif';
+    x.fillText(s.name.toUpperCase(), 540, 830);
+
+    x.fillStyle = 'rgba(255,255,255,0.55)';
+    x.font = '600 42px -apple-system, Arial, sans-serif';
+    x.fillText(lastLevel.unit.toUpperCase(), 540, 1000);
+
+    const badge = lastLevel.metric;
+    x.font = '800 92px -apple-system, Arial, sans-serif';
+    const bw = x.measureText(badge).width + 130, bh = 175, bx = 540 - bw / 2, by = 1050;
+    roundRect(x, bx, by, bw, bh, 88); x.fillStyle = s.accent; x.fill();
+    x.fillStyle = '#fff'; x.textBaseline = 'middle';
+    x.fillText(badge, 540, by + bh / 2 + 4);
+    x.textBaseline = 'alphabetic';
+
+    x.fillStyle = 'rgba(255,255,255,0.8)';
+    x.font = '600 50px -apple-system, Arial, sans-serif';
+    x.fillText(lastLevel.label + ' · ' + lastLevel.n + '/3', 540, by + bh + 92);
+
+    x.fillStyle = '#fff';
+    x.font = '800 70px -apple-system, Arial, sans-serif';
+    x.fillText('¿Y tú? 🔥', 540, 1490);
+    x.fillStyle = 'rgba(255,255,255,0.85)';
+    x.font = '500 46px -apple-system, Arial, sans-serif';
+    x.fillText('Calcula tu nivel y encuentra con quién jugar', 540, 1560);
+
+    x.fillStyle = s.accent;
+    x.font = '700 50px -apple-system, Arial, sans-serif';
+    x.fillText('sportmatch-es.netlify.app', 540, 1730);
+    return c;
+  }
+
+  async function shareLevel() {
+    if (!current || !lastLevel) return;
+    const txt = 'Mi nivel en ' + current.name + ' es ' + lastLevel.label + ' (' + lastLevel.n + '/3) en SportMatch. ¿Y tú? https://sportmatch-es.netlify.app';
+    renderLevelCanvas().toBlob(async (blob) => {
+      const file = new File([blob], 'mi-nivel-sportmatch.png', { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ files: [file], text: txt }); return; }
+        catch (e) { if (e.name === 'AbortError') return; }
+      }
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'mi-nivel-sportmatch.png';
+      document.body.appendChild(a); a.click(); a.remove();
+      alert('Imagen guardada 📲 Súbela a tu story de Instagram y reta a tus amigos.');
+    }, 'image/png');
+  }
+
+  /* ---------- FICHA DE COMPATIBILIDAD (radar por jugador) ---------- */
+  const RADAR_AXES = ['Nivel', 'Ritmo', 'Actitud', 'Horario', 'Idioma'];
+  const ME = [0.85, 0.82, 0.9, 0.8, 0.85];
+
+  function radarValues(p) {
+    const h = hashStr(p.name + current.key);
+    const pick = (shift) => 0.62 + (((h >> shift) & 31) / 45); // ~0.62..0.95 estable
+    return [Math.min(0.98, 0.55 + p.lv * 0.15), pick(2), pick(5), pick(8), pick(11)];
+  }
+
+  function radarSVG(me, them) {
+    const cx = 150, cy = 120, R = 90;
+    const pt = (i, v) => { const a = -Math.PI / 2 + i * 2 * Math.PI / 5; return [cx + R * v * Math.cos(a), cy + R * v * Math.sin(a)]; };
+    const poly = (vals) => vals.map((v, i) => { const [x, y] = pt(i, v); return x.toFixed(1) + ',' + y.toFixed(1); }).join(' ');
+    const grid = (s) => [0, 1, 2, 3, 4].map(i => { const [x, y] = pt(i, s); return x.toFixed(1) + ',' + y.toFixed(1); }).join(' ');
+    const axes = [0, 1, 2, 3, 4].map(i => { const [x, y] = pt(i, 1); return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/>`; }).join('');
+    const labels = RADAR_AXES.map((t, i) => { const [x, y] = pt(i, 1.2); const an = Math.abs(x - cx) < 6 ? 'middle' : (x > cx ? 'start' : 'end'); return `<text x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="${an}" font-size="12" font-weight="700" fill="#111827">${t}</text>`; }).join('');
+    return `<svg viewBox="0 0 300 250" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:300px;height:auto;">
+      <polygon points="${grid(1)}" fill="none" stroke="#e5e7eb" stroke-width="1.5"/>
+      <polygon points="${grid(0.66)}" fill="none" stroke="#e5e7eb" stroke-width="1"/>
+      <polygon points="${grid(0.33)}" fill="none" stroke="#e5e7eb" stroke-width="1"/>
+      ${axes}
+      <polygon points="${poly(them)}" fill="rgba(99,102,241,0.18)" stroke="#6366f1" stroke-width="2"/>
+      <polygon points="${poly(me)}" fill="rgba(22,163,74,0.22)" stroke="#16a34a" stroke-width="2.5"/>
+      ${labels}
+    </svg>`;
+  }
+
+  let lastProfile = null;
+  function openProfile(p) {
+    if (!p) return;
+    lastProfile = p;
+    const compat = 80 + (hashStr(p.name + current.key) % 18);
+    const tags = p.tags.map((t, i) => `<span class="tag ${i === 0 ? 'tag-green' : ''}">${t}</span>`).join('');
+    const fname = p.name.split(' ')[0];
+    document.getElementById('profile-modal').innerHTML = `
+      <div class="modal-head"><h3>${p.name} · ${p.age}</h3><button class="modal-close" onclick="closeProfile()">✕</button></div>
+      <p class="modal-sub" style="margin-bottom:10px">📍 ${p.loc}</p>
+      <div style="text-align:center;margin-bottom:2px"><span class="radar-badge2">${compat}% compatible contigo</span></div>
+      <div style="display:flex;justify-content:center">${radarSVG(ME, radarValues(p))}</div>
+      <div class="radar-legend2"><span><i style="background:#16a34a"></i>Tú</span><span><i style="background:#6366f1"></i>${fname}</span></div>
+      <div class="pcard-tags" style="margin:14px 0 8px">${tags}</div>
+      <div class="pcard-bio" style="margin-bottom:16px">"${p.bio}"</div>
+      <button class="modal-btn" style="background:#fff;color:var(--accent);border:1.5px solid var(--accent);margin-bottom:10px" onclick="closeProfile(); openChat(lastProfile);">💬 Ver cómo coordináis</button>
+      <button class="modal-btn" onclick="closeProfile(); openSurvey();">${current.emoji} Jugar con ${fname}</button>`;
+    document.getElementById('profile-overlay').classList.add('open');
+  }
+
+  function closeProfile() {
+    document.getElementById('profile-overlay').classList.remove('open');
+  }
+
+  /* ---------- CHAT DE EJEMPLO ---------- */
+  function openChat(p) {
+    if (!p) return;
+    const fname = p.name.split(' ')[0];
+    document.getElementById('chat-modal').innerHTML = `
+      <div class="chat-head">
+        <div class="chat-avatar">${p.name.charAt(0)}</div>
+        <div><div class="chat-name">${fname}</div><div class="chat-status">● en línea</div></div>
+        <button class="modal-close" style="margin-left:auto" onclick="closeChat()">✕</button>
+      </div>
+      <div class="chat-body" id="chat-body"></div>
+      <div class="chat-foot">
+        <button class="modal-btn" onclick="closeChat(); openSurvey();">Apúntate para escribirle de verdad →</button>
+      </div>`;
+    document.getElementById('chat-overlay').classList.add('open');
+
+    const body = document.getElementById('chat-body');
+    const msgs = [
+      { who: 'them', t: `¡Hola! Vi que también juegas a ${current.name.toLowerCase()}. ¿Te animas este finde?` },
+      { who: 'me', t: '¡Claro! ¿Qué día te viene bien?' },
+      { who: 'them', t: 'El sábado por la mañana. Tenemos nivel parecido, será buen partido 💪' },
+      { who: 'me', t: 'Perfecto, ahí estaré 🙌' },
+    ];
+    let i = 0;
+    function addBubble(m) {
+      const b = document.createElement('div');
+      b.className = 'bubble ' + m.who;
+      b.textContent = m.t;
+      body.appendChild(b);
+      body.scrollTop = body.scrollHeight;
+    }
+    function next() {
+      if (i >= msgs.length) return;
+      const m = msgs[i++];
+      if (m.who === 'them') {
+        const typing = document.createElement('div');
+        typing.className = 'bubble them typing';
+        typing.innerHTML = '<span></span><span></span><span></span>';
+        body.appendChild(typing); body.scrollTop = body.scrollHeight;
+        setTimeout(() => { typing.remove(); addBubble(m); setTimeout(next, 650); }, 1100);
+      } else {
+        setTimeout(() => { addBubble(m); setTimeout(next, 850); }, 500);
+      }
+    }
+    setTimeout(next, 400);
+  }
+  function closeChat() {
+    document.getElementById('chat-overlay').classList.remove('open');
+  }
+
+  /* ---------- BIENVENIDA ---------- */
+  function closeWelcome() {
+    document.getElementById('welcome').classList.remove('show');
+    try { localStorage.setItem('sm_seen', '1'); } catch (_) {}
+  }
+  (function () {
+    let seen = false;
+    try { seen = !!localStorage.getItem('sm_seen'); } catch (_) {}
+    if (!seen) document.getElementById('welcome').classList.add('show');
+  })();
+
+  renderHome();
+</script>
+
+</body>
+</html>

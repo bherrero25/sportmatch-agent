@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SportMatch — Viajas. Quieres jugar. No conoces a nadie.</title>
+  <meta name="description" content="SportMatch conecta viajeros con deportistas locales compatibles por nivel, ritmo y actitud. Golf, pádel, tenis, running, escalada y más. Donde vayas." />
+  <meta name="theme-color" content="#16a34a" />
+  <link rel="icon" href="favicon.png" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.json" />
+  <!-- Vista previa al compartir (WhatsApp, Instagram, etc.) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="SportMatch — Viajas. Quieres jugar. No conoces a nadie." />
+  <meta property="og:description" content="Conecta con deportistas locales de tu nivel, donde vayas. Golf, pádel, tenis, running, escalada y más." />
+  <meta property="og:image" content="https://sportmatch-es.netlify.app/og.png" />
+  <meta property="og:url" content="https://sportmatch-es.netlify.app/" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --accent: #16a34a;
+      --accent-light: #dcfce7;
+      --bg: #ffffff;
+      --bg2: #f9fafb;
+      --bg3: #f3f4f6;
+      --text: #111827;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); }
+
+    /* NAV */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 32px;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+    }
+    .logo { font-size: 1.2rem; font-weight: 800; color: var(--text); letter-spacing: -0.5px; }
+    .logo em { font-style: normal; color: var(--accent); }
+    .nav-right { display: flex; gap: 10px; align-items: center; }
+    .btn-ghost { background: none; border: 1px solid var(--border); color: var(--muted); padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; cursor: pointer; font-weight: 500; }
+    .btn-accent { background: var(--accent); color: #fff; border: none; padding: 9px 18px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer; }
+    .btn-accent:hover { background: #15803d; }
+
+    /* HERO */
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: center;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 80px 32px;
+    }
+    .hero-left h1 {
+      font-size: clamp(2.2rem, 4vw, 3.4rem);
+      font-weight: 900;
+      line-height: 1.1;
+      letter-spacing: -1.5px;
+      margin-bottom: 16px;
+      color: var(--text);
+    }
+    .hero-left h1 em { font-style: normal; color: var(--accent); }
+    .hero-left p { font-size: 1.05rem; color: var(--muted); line-height: 1.65; margin-bottom: 28px; }
+    .hero-btns { display: flex; gap: 12px; flex-wrap: wrap; }
+    .hero-btn-main {
+      background: var(--accent); color: #fff;
+      border: none; padding: 14px 28px;
+      border-radius: 10px; font-size: 1rem; font-weight: 700;
+      cursor: pointer; transition: background 0.2s;
+    }
+    .hero-btn-main:hover { background: #15803d; }
+    .hero-btn-sec {
+      background: none; color: var(--text);
+      border: 1.5px solid var(--border);
+      padding: 14px 28px; border-radius: 10px;
+      font-size: 1rem; font-weight: 600; cursor: pointer;
+    }
+
+    /* MOCKUP CARDS */
+    .hero-right { position: relative; height: 420px; }
+    .mock-card {
+      position: absolute;
+      background: #1a2e1a;
+      border-radius: 20px;
+      padding: 20px;
+      width: 260px;
+      color: #fff;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    }
+    .mock-card.main { top: 20px; right: 20px; z-index: 2; }
+    .mock-card.behind { top: 60px; right: 60px; z-index: 1; opacity: 0.5; transform: scale(0.95); }
+    .mock-avatar {
+      width: 52px; height: 52px; border-radius: 50%;
+      background: var(--accent); display: flex;
+      align-items: center; justify-content: center;
+      font-size: 1.3rem; font-weight: 800;
+      margin-bottom: 12px; overflow: hidden;
+    }
+    .mock-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .mock-compat { font-size: 0.72rem; color: #86efac; font-weight: 600; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.05em; }
+    .mock-name { font-size: 1.1rem; font-weight: 800; margin-bottom: 4px; }
+    .mock-desc { font-size: 0.8rem; color: rgba(255,255,255,0.6); margin-bottom: 12px; }
+    .mock-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+    .mock-tag {
+      font-size: 0.7rem; padding: 3px 9px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 999px; color: rgba(255,255,255,0.8);
+    }
+    .mock-btns { display: flex; gap: 8px; }
+    .mock-skip { flex: 1; padding: 10px; border: 1.5px solid rgba(255,255,255,0.2); border-radius: 9px; background: none; color: rgba(255,255,255,0.6); font-size: 0.85rem; cursor: pointer; }
+    .mock-play { flex: 2; padding: 10px; background: var(--accent); border: none; border-radius: 9px; color: #fff; font-weight: 700; font-size: 0.85rem; cursor: pointer; }
+
+    /* SPORTS SECTION */
+    .sports-section { background: var(--bg2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 64px 32px; }
+    .section-header { text-align: center; margin-bottom: 40px; }
+    .section-header h2 { font-size: clamp(1.6rem, 3vw, 2.4rem); font-weight: 900; letter-spacing: -0.5px; margin-bottom: 8px; }
+    .section-header p { color: var(--muted); font-size: 1rem; }
+
+    .sports-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .sport-chip {
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      display: flex; align-items: center; gap: 14px;
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+    }
+    .sport-chip:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(22,163,74,0.1); }
+    .sport-emoji { font-size: 1.8rem; }
+    .sport-info strong { display: block; font-size: 0.95rem; font-weight: 700; margin-bottom: 2px; }
+    .sport-info span { font-size: 0.78rem; color: var(--muted); }
+
+    /* PROFILES */
+    .profiles-section { padding: 64px 32px; max-width: 1100px; margin: 0 auto; }
+    .pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 28px; }
+    .pill {
+      padding: 7px 16px; border-radius: 999px;
+      border: 1.5px solid var(--border);
+      background: none; color: var(--muted);
+      font-size: 0.83rem; cursor: pointer; font-weight: 500;
+      transition: all 0.15s;
+    }
+    .pill.active, .pill:hover { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 700; }
+
+    .profiles-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+      gap: 20px;
+    }
+    .pcard {
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: 18px;
+      overflow: hidden;
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    }
+    .pcard:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 12px 32px rgba(22,163,74,0.1); }
+
+    .pcard-photo { position: relative; height: 200px; overflow: hidden; }
+    .pcard-photo img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.4s; }
+    .pcard:hover .pcard-photo img { transform: scale(1.04); }
+    .pcard-badge {
+      position: absolute; top: 12px; left: 12px;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(4px);
+      color: var(--accent);
+      font-size: 0.72rem; font-weight: 700;
+      padding: 4px 10px; border-radius: 999px;
+      border: 1px solid rgba(22,163,74,0.2);
+    }
+    .pcard-online {
+      position: absolute; top: 12px; right: 12px;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(4px);
+      color: #16a34a;
+      font-size: 0.72rem; font-weight: 600;
+      padding: 4px 10px; border-radius: 999px;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .online-dot { width: 6px; height: 6px; border-radius: 50%; background: #16a34a; }
+
+    .pcard-body { padding: 16px; }
+    .pcard-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3px; }
+    .pcard-name { font-size: 1rem; font-weight: 800; color: var(--text); }
+    .pcard-age { font-size: 0.82rem; color: var(--muted); }
+    .pcard-loc { font-size: 0.78rem; color: var(--muted); margin-bottom: 10px; }
+    .pcard-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+    .tag {
+      font-size: 0.7rem; padding: 3px 9px;
+      border-radius: 6px; background: var(--bg3);
+      color: var(--muted); font-weight: 500;
+    }
+    .tag-green { background: var(--accent-light); color: var(--accent); font-weight: 600; }
+    .pcard-bio { font-size: 0.82rem; color: var(--muted); line-height: 1.5; margin-bottom: 12px; font-style: italic; }
+    .pcard-avail { font-size: 0.78rem; color: var(--accent); font-weight: 600; margin-bottom: 14px; }
+    .pcard-btns { display: flex; gap: 8px; }
+    .btn-skip { flex: 1; padding: 9px; border: 1.5px solid var(--border); border-radius: 9px; background: none; color: var(--muted); font-size: 0.83rem; cursor: pointer; font-weight: 500; }
+    .btn-play { flex: 2; padding: 9px; background: var(--accent); border: none; border-radius: 9px; color: #fff; font-weight: 700; font-size: 0.83rem; cursor: pointer; }
+    .btn-play:hover { background: #15803d; }
+
+    /* HOW IT WORKS */
+    .how { background: #1a2e1a; color: #fff; padding: 80px 32px; text-align: center; }
+    .how h2 { font-size: clamp(1.6rem, 3vw, 2.4rem); font-weight: 900; margin-bottom: 8px; letter-spacing: -0.5px; }
+    .how .sub { color: rgba(255,255,255,0.5); margin-bottom: 48px; }
+    .steps { display: grid; grid-template-columns: repeat(3,1fr); gap: 32px; max-width: 800px; margin: 0 auto; }
+    .step-icon { font-size: 2rem; margin-bottom: 14px; }
+    .step h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+    .step p { font-size: 0.83rem; color: rgba(255,255,255,0.5); line-height: 1.6; }
+
+    /* CTA */
+    .cta { padding: 80px 32px; text-align: center; max-width: 600px; margin: 0 auto; }
+    .cta h2 { font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 900; letter-spacing: -0.5px; margin-bottom: 10px; }
+    .cta p { color: var(--muted); margin-bottom: 28px; }
+
+    /* MODAL */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+      z-index: 200; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: #fff; border-radius: 20px; padding: 32px;
+      max-width: 400px; width: 100%;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.15);
+      animation: fadeUp 0.2s ease;
+    }
+    .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .modal-head h2 { font-size: 1.15rem; font-weight: 800; color: var(--text); }
+    .modal-close { background: none; border: none; color: var(--muted); font-size: 1.3rem; cursor: pointer; }
+    .modal-sub { font-size: 0.83rem; color: var(--muted); margin-bottom: 20px; }
+
+    .contact-preview {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--bg2); border-radius: 12px;
+      padding: 12px 14px; margin-bottom: 20px;
+      border: 1px solid var(--border);
+    }
+    .contact-avatar {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: var(--accent); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; font-weight: 800; flex-shrink: 0;
+    }
+    .contact-info strong { display: block; font-size: 0.9rem; font-weight: 700; color: var(--text); }
+    .contact-info span { font-size: 0.75rem; color: var(--muted); }
+
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; }
+    .form-group input {
+      width: 100%; padding: 11px 13px;
+      background: var(--bg2); border: 1.5px solid var(--border);
+      border-radius: 9px; color: var(--text); font-size: 0.9rem;
+      outline: none; transition: border-color 0.2s;
+    }
+    .form-group input:focus { border-color: var(--accent); }
+    .form-group input::placeholder { color: #d1d5db; }
+    .modal-btn {
+      width: 100%; padding: 13px;
+      background: var(--accent); color: #fff;
+      border: none; border-radius: 9px;
+      font-weight: 800; font-size: 0.95rem;
+      cursor: pointer; margin-top: 4px;
+    }
+    .modal-btn:hover { background: #15803d; }
+    .modal-fine { text-align: center; font-size: 0.72rem; color: #d1d5db; margin-top: 10px; }
+
+    .modal-success { display: none; text-align: center; padding: 8px 0; }
+    .modal-success .icon { font-size: 2.8rem; margin-bottom: 10px; }
+    .modal-success h3 { font-size: 1.1rem; font-weight: 800; color: var(--text); margin-bottom: 8px; }
+    .modal-success p { font-size: 0.83rem; color: var(--muted); line-height: 1.5; }
+
+    /* COMPATIBILIDAD (radar) */
+    .compat-section { padding: 64px 32px; max-width: 760px; margin: 0 auto; }
+    .radar-wrap { display: flex; flex-direction: column; align-items: center; gap: 18px; }
+    .radar-wrap svg { width: 100%; max-width: 340px; height: auto; }
+    .radar-badge { background: var(--accent); color: #fff; font-weight: 800; padding: 7px 18px; border-radius: 999px; font-size: 0.9rem; }
+    .radar-legend { display: flex; gap: 22px; font-size: 0.85rem; color: var(--muted); }
+    .radar-legend span { display: inline-flex; align-items: center; gap: 7px; font-weight: 600; }
+    .radar-legend .dot { width: 13px; height: 13px; border-radius: 4px; }
+
+    /* FAQ */
+    .faq-section { padding: 8px 32px 72px; max-width: 680px; margin: 0 auto; }
+    .faq details { border: 1.5px solid var(--border); border-radius: 14px; padding: 2px 18px; margin-bottom: 12px; background: #fff; }
+    .faq summary { cursor: pointer; font-weight: 700; padding: 15px 0; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 0.97rem; }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::after { content: '+'; color: var(--accent); font-size: 1.4rem; font-weight: 800; line-height: 1; }
+    .faq details[open] summary::after { content: '−'; }
+    .faq details p { color: var(--muted); font-size: 0.9rem; line-height: 1.6; padding: 0 0 16px; margin: 0; }
+
+    footer { border-top: 1px solid var(--border); padding: 24px 32px; text-align: center; font-size: 0.78rem; color: var(--muted); }
+
+    @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+
+    /* MOBILE STICKY CTA */
+    .mobile-cta { display: none; }
+
+    @media (max-width: 768px) {
+      .mobile-cta {
+        display: block; position: fixed; bottom: 0; left: 0; right: 0;
+        z-index: 150;
+        padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+        background: rgba(255,255,255,0.97);
+        backdrop-filter: blur(8px);
+        border-top: 1px solid var(--border);
+      }
+      .mobile-cta button {
+        width: 100%; padding: 15px;
+        background: var(--accent); color: #fff;
+        border: none; border-radius: 11px;
+        font-size: 1.02rem; font-weight: 800; cursor: pointer;
+      }
+      body { padding-bottom: 80px; }
+      nav .btn-ghost { display: none; }
+      .hero { grid-template-columns: 1fr; padding: 48px 20px; gap: 40px; }
+      .hero-right { height: 320px; }
+      .mock-card { width: 220px; }
+      .sports-grid { grid-template-columns: 1fr 1fr; }
+      .steps { grid-template-columns: 1fr; gap: 24px; }
+      nav { padding: 14px 20px; }
+      .profiles-section, .sports-section { padding: 48px 20px; }
+      .compat-section { padding: 48px 20px; }
+      .faq-section { padding: 8px 20px 56px; }
+      .cta { padding: 48px 20px; }
+    }
+    @media (max-width: 480px) {
+      .sports-grid { grid-template-columns: 1fr; }
+      .profiles-grid { grid-template-columns: 1fr; }
+      .modal { padding: 24px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">Sport<em>Match</em></div>
+  <div class="nav-right">
+    <button class="btn-ghost" onclick="openModal(null)">Entrar</button>
+    <button class="btn-accent" onclick="openModal(null)">Crear perfil gratis</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-left">
+    <h1>Viajas a otra ciudad.<br>Quieres jugar.<br><em>No conoces a nadie.</em></h1>
+    <p>SportMatch conecta viajeros con deportistas locales compatibles — por nivel, ritmo y actitud. Golf, pádel, tenis, running. En minutos.</p>
+    <div class="hero-btns">
+      <button class="hero-btn-main" onclick="openModal(null)">Crear perfil gratis →</button>
+      <button class="hero-btn-sec" onclick="location.href='app.html'">Probar la app →</button>
+    </div>
+    <p style="margin-top:18px; font-size:0.82rem; color:var(--muted);">🟢 <strong style="color:var(--text)">Lista de espera abierta</strong> · Sé de los primeros en tu ciudad · Gratis en fase beta</p>
+  </div>
+  <div class="hero-right">
+    <div class="mock-card behind">
+      <div class="mock-avatar">M</div>
+      <div class="mock-name">Marta W.</div>
+    </div>
+    <div class="mock-card main">
+      <div class="mock-avatar">
+        <img src="https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=200&q=70" alt="Carlos" />
+      </div>
+      <div class="mock-compat">⛳ Muy compatible</div>
+      <div class="mock-name">Carlos M., 38</div>
+      <div class="mock-desc">Ritmo relajado, mañanas, sociable</div>
+      <div class="mock-tags">
+        <span class="mock-tag">Hándicap 12</span>
+        <span class="mock-tag">Mañanas</span>
+        <span class="mock-tag">Inglés</span>
+      </div>
+      <div class="mock-btns">
+        <button class="mock-skip">✕ Saltar</button>
+        <button class="mock-play" onclick="openModal({name:'Carlos M.', sport:'⛳ Golf', loc:'Madrid · esta semana'})">⛳ Jugar</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DEPORTES -->
+<section class="sports-section">
+  <div class="section-header">
+    <h2>Tu deporte. Tu ciudad. Tu ritmo.</h2>
+    <p>Siete deportes. Un solo perfil. Donde vayas.</p>
+  </div>
+  <div class="sports-grid">
+    <div class="sport-chip" onclick="openModal(null)">
+      <span class="sport-emoji">⛳</span>
+      <div class="sport-info"><strong>Golf</strong><span>Por hándicap, ritmo e idioma</span></div>
+    </div>
+    <div class="sport-chip" onclick="openModal(null)">
+      <span class="sport-emoji">🎾</span>
+      <div class="sport-info"><strong>Pádel</strong><span>Mixto, nivel, horario</span></div>
+    </div>
+    <div class="sport-chip" onclick="openModal(null)">
+      <span class="sport-emoji">🎾</span>
+      <div class="sport-info"><strong>Tenis</strong><span>Singles o dobles, cualquier nivel</span></div>
+    </div>
+    <div class="sport-chip" onclick="openModal(null)">
+      <span class="sport-emoji">🏃</span>
+      <div class="sport-info"><strong>Running</strong><span>Por pace, distancia y ruta</span></div>
+    </div>
+    <div class="sport-chip" onclick="openModal(null)">
+      <span class="sport-emoji">🥾</span>
+      <div class="sport-info"><strong>Senderismo</strong><span>Nivel, duración y terreno</span></div>
+    </div>
+    <div class="sport-chip" onclick="openModal(null)">
+      <span class="sport-emoji">⛷️</span>
+      <div class="sport-info"><strong>Esquí</strong><span>Nivel, estación y jornada</span></div>
+    </div>
+    <div class="sport-chip" onclick="openModal(null)">
+      <span class="sport-emoji">🧗</span>
+      <div class="sport-info"><strong>Escalada</strong><span>Grado, rocódromo o roca</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- PERFILES -->
+<section class="profiles-section" id="perfiles">
+  <div class="section-header" style="text-align:left; margin-bottom:20px;">
+    <h2>Así se verá tu feed de deportistas</h2>
+    <p>Perfiles de ejemplo — pronto, personas reales disponibles en tu ciudad.</p>
+  </div>
+  <div class="pills">
+    <button class="pill active" data-filter="todos">Todos</button>
+    <button class="pill" data-filter="golf">⛳ Golf</button>
+    <button class="pill" data-filter="padel">🎾 Pádel</button>
+    <button class="pill" data-filter="tenis">🎾 Tenis</button>
+    <button class="pill" data-filter="running">🏃 Running</button>
+    <button class="pill" data-filter="senderismo">🥾 Senderismo</button>
+    <button class="pill" data-filter="esqui">⛷️ Esquí</button>
+    <button class="pill" data-filter="escalada">🧗 Escalada</button>
+  </div>
+
+  <div class="profiles-grid" id="grid">
+
+    <div class="pcard" data-sport="golf">
+      <div class="pcard-photo">
+        <img src="https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=600&q=75" alt="Golf" />
+        <span class="pcard-badge">⛳ Golf</span>
+        <span class="pcard-online"><span class="online-dot"></span>Disponible</span>
+      </div>
+      <div class="pcard-body">
+        <div class="pcard-top"><div class="pcard-name">Carlos M.</div><div class="pcard-age">38 años</div></div>
+        <div class="pcard-loc">📍 Madrid · viaja a Marbella 20–25 jun</div>
+        <div class="pcard-tags">
+          <span class="tag tag-green">Hándicap 12</span>
+          <span class="tag">Ritmo relajado</span>
+          <span class="tag">Mañanas</span>
+          <span class="tag">🇬🇧 Inglés</span>
+        </div>
+        <div class="pcard-bio">"Busco compañero de green para no jugar solo cuando viajo por trabajo."</div>
+        <div class="pcard-avail">✓ Disponible esta semana</div>
+        <div class="pcard-btns">
+          <button class="btn-skip">✕ Saltar</button>
+          <button class="btn-play" onclick="openModal({name:'Carlos M.', sport:'⛳ Golf', loc:'Marbella · 20–25 jun'})">⛳ Jugar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="pcard" data-sport="padel">
+      <div class="pcard-photo">
+        <img src="https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=600&q=75" alt="Pádel" />
+        <span class="pcard-badge">🎾 Pádel</span>
+        <span class="pcard-online"><span class="online-dot"></span>Disponible</span>
+      </div>
+      <div class="pcard-body">
+        <div class="pcard-top"><div class="pcard-name">Laura G.</div><div class="pcard-age">31 años</div></div>
+        <div class="pcard-loc">📍 Barcelona · disponible en Madrid jun</div>
+        <div class="pcard-tags">
+          <span class="tag tag-green">Nivel medio</span>
+          <span class="tag">Mixto</span>
+          <span class="tag">Tardes</span>
+          <span class="tag">🇪🇸 Español</span>
+        </div>
+        <div class="pcard-bio">"Cuando viajo nunca tengo con quién jugar al pádel. Aquí para cambiar eso."</div>
+        <div class="pcard-avail">✓ Disponible esta semana</div>
+        <div class="pcard-btns">
+          <button class="btn-skip">✕ Saltar</button>
+          <button class="btn-play" onclick="openModal({name:'Laura G.', sport:'🎾 Pádel', loc:'Madrid · esta semana'})">🎾 Jugar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="pcard" data-sport="running">
+      <div class="pcard-photo">
+        <img src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=600&q=75" alt="Running" />
+        <span class="pcard-badge">🏃 Running</span>
+        <span class="pcard-online"><span class="online-dot"></span>Disponible</span>
+      </div>
+      <div class="pcard-body">
+        <div class="pcard-top"><div class="pcard-name">Marcos R.</div><div class="pcard-age">35 años</div></div>
+        <div class="pcard-loc">📍 Madrid · viaja a Sevilla 18–22 jun</div>
+        <div class="pcard-tags">
+          <span class="tag tag-green">Pace 5:30</span>
+          <span class="tag">10K</span>
+          <span class="tag">Mañanas</span>
+          <span class="tag">🇪🇸 Español</span>
+        </div>
+        <div class="pcard-bio">"Salgo a correr en cada ciudad que visito. Prefiero hacerlo con alguien local."</div>
+        <div class="pcard-avail">✓ Disponible esta semana</div>
+        <div class="pcard-btns">
+          <button class="btn-skip">✕ Saltar</button>
+          <button class="btn-play" onclick="openModal({name:'Marcos R.', sport:'🏃 Running', loc:'Sevilla · 18–22 jun'})">🏃 Correr</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="pcard" data-sport="golf">
+      <div class="pcard-photo">
+        <img src="https://images.unsplash.com/photo-1587174486073-ae5e5cff23aa?w=600&q=75" alt="Golf" />
+        <span class="pcard-badge">⛳ Golf</span>
+        <span class="pcard-online"><span class="online-dot"></span>Disponible</span>
+      </div>
+      <div class="pcard-body">
+        <div class="pcard-top"><div class="pcard-name">Ana P.</div><div class="pcard-age">44 años</div></div>
+        <div class="pcard-loc">📍 Madrid · disponible localmente</div>
+        <div class="pcard-tags">
+          <span class="tag tag-green">Hándicap 20</span>
+          <span class="tag">9 hoyos</span>
+          <span class="tag">Fines de semana</span>
+        </div>
+        <div class="pcard-bio">"Socia de club, siempre dispuesta a jugar con viajeros que visiten Madrid."</div>
+        <div class="pcard-avail">✓ Disponible este fin de semana</div>
+        <div class="pcard-btns">
+          <button class="btn-skip">✕ Saltar</button>
+          <button class="btn-play" onclick="openModal({name:'Ana P.', sport:'⛳ Golf', loc:'Madrid · este fin de semana'})">⛳ Jugar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="pcard" data-sport="tenis">
+      <div class="pcard-photo">
+        <img src="https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=600&q=75" alt="Tenis" />
+        <span class="pcard-badge">🎾 Tenis</span>
+        <span class="pcard-online"><span class="online-dot"></span>Disponible</span>
+      </div>
+      <div class="pcard-body">
+        <div class="pcard-top"><div class="pcard-name">Javier S.</div><div class="pcard-age">29 años</div></div>
+        <div class="pcard-loc">📍 Valencia · viaja a Madrid 19–21 jun</div>
+        <div class="pcard-tags">
+          <span class="tag tag-green">Nivel avanzado</span>
+          <span class="tag">Singles</span>
+          <span class="tag">Flexible</span>
+          <span class="tag">🇬🇧 Inglés</span>
+        </div>
+        <div class="pcard-bio">"Viajo cada semana a Madrid. El tenis es mi forma de desconectar. Busco rival serio."</div>
+        <div class="pcard-avail">✓ Disponible jue y vie</div>
+        <div class="pcard-btns">
+          <button class="btn-skip">✕ Saltar</button>
+          <button class="btn-play" onclick="openModal({name:'Javier S.', sport:'🎾 Tenis', loc:'Madrid · 19–21 jun'})">🎾 Jugar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="pcard" data-sport="senderismo">
+      <div class="pcard-photo">
+        <img src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&q=75" alt="Senderismo" />
+        <span class="pcard-badge">🥾 Senderismo</span>
+        <span class="pcard-online"><span class="online-dot"></span>Disponible</span>
+      </div>
+      <div class="pcard-body">
+        <div class="pcard-top"><div class="pcard-name">Sofía L.</div><div class="pcard-age">33 años</div></div>
+        <div class="pcard-loc">📍 Madrid · fines de semana</div>
+        <div class="pcard-tags">
+          <span class="tag tag-green">Nivel medio</span>
+          <span class="tag">Sierra</span>
+          <span class="tag">Sábados</span>
+        </div>
+        <div class="pcard-bio">"Organizo rutas por la sierra casi todos los sábados. Siempre hay sitio para alguien nuevo."</div>
+        <div class="pcard-avail">✓ Disponible este sábado</div>
+        <div class="pcard-btns">
+          <button class="btn-skip">✕ Saltar</button>
+          <button class="btn-play" onclick="openModal({name:'Sofía L.', sport:'🥾 Senderismo', loc:'Madrid · este sábado'})">🥾 Ir</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="pcard" data-sport="esqui">
+      <div class="pcard-photo">
+        <img src="https://images.unsplash.com/photo-1551524559-8af4e6624178?w=600&q=75" alt="Esquí" />
+        <span class="pcard-badge">⛷️ Esquí</span>
+        <span class="pcard-online"><span class="online-dot"></span>Disponible</span>
+      </div>
+      <div class="pcard-body">
+        <div class="pcard-top"><div class="pcard-name">Diego F.</div><div class="pcard-age">41 años</div></div>
+        <div class="pcard-loc">📍 Madrid · viaja a Baqueira esta temporada</div>
+        <div class="pcard-tags">
+          <span class="tag tag-green">Nivel avanzado</span>
+          <span class="tag">Fuera de pista</span>
+          <span class="tag">Toda la jornada</span>
+        </div>
+        <div class="pcard-bio">"Voy a Baqueira casi cada temporada pero siempre solo. Busco alguien con buen nivel."</div>
+        <div class="pcard-avail">✓ Disponible esta temporada</div>
+        <div class="pcard-btns">
+          <button class="btn-skip">✕ Saltar</button>
+          <button class="btn-play" onclick="openModal({name:'Diego F.', sport:'⛷️ Esquí', loc:'Baqueira · esta temporada'})">⛷️ Esquiar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="pcard" data-sport="escalada">
+      <div class="pcard-photo">
+        <img src="https://images.unsplash.com/photo-1522163182402-834f871fd851?w=600&q=75" alt="Escalada" />
+        <span class="pcard-badge">🧗 Escalada</span>
+        <span class="pcard-online"><span class="online-dot"></span>Disponible</span>
+      </div>
+      <div class="pcard-body">
+        <div class="pcard-top"><div class="pcard-name">Nora V.</div><div class="pcard-age">26 años</div></div>
+        <div class="pcard-loc">📍 Madrid · viaja a Chulilla este finde</div>
+        <div class="pcard-tags">
+          <span class="tag tag-green">6c+</span>
+          <span class="tag">Deportiva</span>
+          <span class="tag">Tardes</span>
+          <span class="tag">🇬🇧 Inglés</span>
+        </div>
+        <div class="pcard-bio">"Escalo en cada viaje. Busco compañero/a de cuerda para rocódromo o roca."</div>
+        <div class="pcard-avail">✓ Disponible esta semana</div>
+        <div class="pcard-btns">
+          <button class="btn-skip">✕ Saltar</button>
+          <button class="btn-play" onclick="openModal({name:'Nora V.', sport:'🧗 Escalada', loc:'Chulilla · este finde'})">🧗 Escalar</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- CÓMO FUNCIONA -->
+<div class="how">
+  <h2>Encuentra con quién jugar. Luego decide dónde.</h2>
+  <p class="sub">Tres pasos y estás jugando.</p>
+  <div class="steps">
+    <div class="step">
+      <div class="step-icon">📍</div>
+      <h3>Di dónde y cuándo viajas</h3>
+      <p>Indica tu ciudad y fechas. En segundos ves quién está disponible cerca de ti.</p>
+    </div>
+    <div class="step">
+      <div class="step-icon">🤝</div>
+      <h3>Conecta por compatibilidad</h3>
+      <p>No solo por nivel. También por ritmo, actitud, idioma y horario.</p>
+    </div>
+    <div class="step">
+      <div class="step-icon">🏅</div>
+      <h3>Quedáis y jugáis</h3>
+      <p>Chat directo para quedar. Sin burocracia. Sin intermediarios.</p>
+    </div>
+  </div>
+</div>
+
+<!-- COMPATIBILIDAD (radar) -->
+<section class="compat-section">
+  <div class="section-header">
+    <h2>No solo por nivel</h2>
+    <p>Te emparejamos por todo lo que hace que una quedada funcione: nivel, ritmo, actitud, horario e idioma.</p>
+  </div>
+  <div class="radar-wrap">
+    <svg viewBox="-28 18 356 270" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Radar de compatibilidad">
+      <!-- rejilla -->
+      <polygon points="150,40 255,116 215,239 85,239 45,116" fill="none" stroke="#e5e7eb" stroke-width="1.5"/>
+      <polygon points="150,77 219,128 193,209 107,209 81,128" fill="none" stroke="#e5e7eb" stroke-width="1"/>
+      <polygon points="150,114 185,139 171,179 129,179 115,139" fill="none" stroke="#e5e7eb" stroke-width="1"/>
+      <!-- ejes -->
+      <line x1="150" y1="150" x2="150" y2="40" stroke="#e5e7eb" stroke-width="1"/>
+      <line x1="150" y1="150" x2="255" y2="116" stroke="#e5e7eb" stroke-width="1"/>
+      <line x1="150" y1="150" x2="215" y2="239" stroke="#e5e7eb" stroke-width="1"/>
+      <line x1="150" y1="150" x2="85" y2="239" stroke="#e5e7eb" stroke-width="1"/>
+      <line x1="150" y1="150" x2="45" y2="116" stroke="#e5e7eb" stroke-width="1"/>
+      <!-- compañero -->
+      <polygon points="150,51 239,121 211,235 98,221 77,126" fill="rgba(99,102,241,0.18)" stroke="#6366f1" stroke-width="2"/>
+      <!-- tú -->
+      <polygon points="150,57 244,119 208,230 95,226 66,123" fill="rgba(22,163,74,0.22)" stroke="#16a34a" stroke-width="2.5"/>
+      <!-- etiquetas -->
+      <text x="150" y="30" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">Nivel</text>
+      <text x="262" y="112" text-anchor="start" font-size="13" font-weight="700" fill="#111827">Ritmo</text>
+      <text x="214" y="258" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">Actitud</text>
+      <text x="86" y="258" text-anchor="middle" font-size="13" font-weight="700" fill="#111827">Horario</text>
+      <text x="38" y="112" text-anchor="end" font-size="13" font-weight="700" fill="#111827">Idioma</text>
+    </svg>
+    <div class="radar-badge">94% compatible</div>
+    <div class="radar-legend">
+      <span><span class="dot" style="background:#16a34a"></span>Tú</span>
+      <span><span class="dot" style="background:#6366f1"></span>Tu compañero</span>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq-section">
+  <div class="section-header" style="margin-bottom:24px;">
+    <h2>Preguntas frecuentes</h2>
+  </div>
+  <div class="faq">
+    <details>
+      <summary>¿Es gratis?</summary>
+      <p>Sí. Apuntarte y usar SportMatch durante la beta es totalmente gratis. No pedimos tarjeta.</p>
+    </details>
+    <details>
+      <summary>¿Cuándo se lanza?</summary>
+      <p>Estamos en fase beta, reuniendo a los primeros jugadores ciudad por ciudad. Te avisamos en cuanto haya gente con quien jugar cerca de ti.</p>
+    </details>
+    <details>
+      <summary>¿Cómo funciona el match?</summary>
+      <p>Te emparejamos por nivel, ritmo, actitud, horario, idioma y cercanía. Cuanta más gente apuntada haya en tu zona, mejores compañeros encontrarás.</p>
+    </details>
+    <details>
+      <summary>¿Necesito descargar una app?</summary>
+      <p>No. SportMatch funciona desde el navegador. Si quieres, puedes "añadirla a la pantalla de inicio" de tu móvil y tenerla como una app, sin pasar por las tiendas.</p>
+    </details>
+    <details>
+      <summary>¿Qué deportes hay?</summary>
+      <p>Golf, pádel, tenis, running, senderismo, esquí, escalada y baloncesto. Iremos añadiendo más según lo que pida la gente.</p>
+    </details>
+    <details>
+      <summary>¿En qué ciudades funciona?</summary>
+      <p>Empezamos por donde haya más jugadores apuntados. Por eso ayuda mucho que compartas SportMatch con gente que viaje y haga deporte.</p>
+    </details>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+  <h2>Tu próximo compañero te está esperando</h2>
+  <p>Únete a la lista de espera y sé de los primeros en jugar. Gratis en fase beta.</p>
+  <button class="hero-btn-main" onclick="openModal(null)">Crear perfil gratis →</button>
+</section>
+
+<footer>SportMatch · Hecho en España 🇪🇸 · © 2026</footer>
+
+<!-- STICKY CTA MÓVIL -->
+<div class="mobile-cta">
+  <button onclick="openModal(null)">Crear perfil gratis →</button>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div id="modal-form-area">
+      <div class="modal-head">
+        <h2 id="modal-title">Crear mi perfil</h2>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <p class="modal-sub" id="modal-sub">Lista de espera de la beta · Solo nombre y email — 20 segundos.</p>
+
+      <div class="contact-preview" id="modal-preview" style="display:none">
+        <div class="contact-avatar" id="preview-avatar">?</div>
+        <div class="contact-info">
+          <strong id="preview-name"></strong>
+          <span id="preview-detail"></span>
+        </div>
+      </div>
+
+      <form action='/' id='modal-form' method='POST' name='lista-espera' target='sm-hidden-iframe'>
+        <input type="hidden" name="form-name" value="lista-espera" />
+        <input type="hidden" name="bot-field" style="display:none" />
+        <input type="hidden" name="contacto" id="hidden-contacto" value="" />
+        <div class="form-group">
+          <label>Nombre</label>
+          <input type="text" name="nombre" placeholder="Tu nombre" required />
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" name="email" placeholder="tu@email.com" required />
+        </div>
+        <button type="submit" class="modal-btn" id="modal-btn-text">Crear perfil gratis →</button>
+        <p class="modal-fine">Te avisamos cuando SportMatch lance. Sin spam.</p>
+      </form>
+    </div>
+
+    <div class="modal-success" id="modal-success">
+      <div class="icon">✅</div>
+      <h3>¡Estás en la lista!</h3>
+      <p>SportMatch está en fase beta: estamos reuniendo a los primeros jugadores en cada ciudad. Te escribiremos en cuanto haya gente con quien jugar cerca de ti.</p>
+      <p style="margin-top:12px; font-weight:600; color:var(--text);">Eres de los primeros 🙌<br>Comparte SportMatch con alguien que viaje y haga deporte — cuantos más seamos, antes encontrarás compañero.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Destino oculto del envío del formulario (POST nativo, robusto en móvil/in-app browsers) -->
+<iframe name="sm-hidden-iframe" id="sm-hidden-iframe" style="display:none" title="envío"></iframe>
+
+<script>
+  document.querySelectorAll('.pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.pill').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const f = btn.dataset.filter;
+      document.querySelectorAll('.pcard').forEach(c => {
+        c.style.display = (f === 'todos' || c.dataset.sport === f) ? 'block' : 'none';
+      });
+    });
+  });
+
+  function openModal(person) {
+    const preview = document.getElementById('modal-preview');
+    if (person) {
+      document.getElementById('modal-title').textContent = 'Únete a la lista de espera';
+      document.getElementById('modal-sub').textContent = 'Apúntate a la beta y te avisamos cuando haya jugadores como ' + person.name.split(' ')[0] + ' disponibles cerca de ti.';
+      document.getElementById('preview-avatar').textContent = person.name.charAt(0);
+      document.getElementById('preview-name').textContent = person.name + ' · ' + person.sport;
+      document.getElementById('preview-detail').textContent = '📍 ' + person.loc;
+      document.getElementById('hidden-contacto').value = person.name;
+      document.getElementById('modal-btn-text').textContent = 'Apuntarme a la lista →';
+      preview.style.display = 'flex';
+    } else {
+      document.getElementById('modal-title').textContent = 'Únete a la lista de espera';
+      document.getElementById('modal-sub').textContent = 'Lista de espera de la beta · Solo nombre y email — 20 segundos.';
+      document.getElementById('modal-btn-text').textContent = 'Crear perfil gratis →';
+      preview.style.display = 'none';
+    }
+    document.getElementById('modal-form-area').style.display = 'block';
+    document.getElementById('modal-success').style.display = 'none';
+    document.getElementById('modal').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('modal').classList.remove('open');
+  }
+
+  // Envío robusto: POST nativo dentro de un iframe oculto.
+  // Funciona en Safari/Chrome y en los mini-navegadores de WhatsApp/Instagram,
+  // donde fetch/AJAX suele fallar. La validación de campos obligatorios sigue
+  // aplicándose: si falta nombre o email, el navegador bloquea el envío.
+  var smSubmitted = false;
+
+  document.getElementById('modal-form').addEventListener('submit', function() {
+    smSubmitted = true;
+    var btn = document.getElementById('modal-btn-text');
+    btn.textContent = 'Enviando…';
+    btn.disabled = true;
+  });
+
+  document.getElementById('sm-hidden-iframe').addEventListener('load', function() {
+    if (!smSubmitted) return; // ignora la carga inicial del iframe
+    document.getElementById('modal-form-area').style.display = 'none';
+    document.getElementById('modal-success').style.display = 'block';
+  });
+</script>
+
+</body>
+</html>
