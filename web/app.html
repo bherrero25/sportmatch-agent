@@ -1075,8 +1075,12 @@
       if (data.user) {
         await sb.from('profiles').upsert({ id: data.user.id, nombre: nombre || email.split('@')[0], deporte: null, nivel: null, ciudad: null });
         msg.style.color = '#16a34a';
-        msg.textContent = '¡Cuenta creada! Revisa tu email para confirmarla.';
+        msg.textContent = '✅ ¡Cuenta creada! Te hemos enviado un email — confírmalo y vuelve aquí para entrar.';
         btn.textContent = 'Crear cuenta →'; btn.disabled = false;
+        document.getElementById('auth-email').value = '';
+        document.getElementById('auth-pass').value = '';
+        document.getElementById('auth-nombre').value = '';
+        authTab('login');
       }
     } else {
       const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
