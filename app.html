@@ -752,6 +752,12 @@
       })
     }).then(function(r) {
       if (!r.ok) throw new Error('error ' + r.status);
+      // Disparar email de aviso + bienvenida
+      fetch(SUPABASE_URL + '/functions/v1/notify-signup', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ record: { nombre: nombre, email: email, deporte: document.getElementById('f-deporte').value, nivel: document.getElementById('f-nivel').value } })
+      }).catch(function() {});
       document.getElementById('success-text').textContent =
         'Te hemos apuntado en ' + current.name.toLowerCase() + '. SportMatch está en fase beta: estamos reuniendo a los primeros jugadores en cada ciudad. Te escribiremos en cuanto haya gente con quien jugar cerca de ti.';
       document.getElementById('modal-body').style.display = 'none';
