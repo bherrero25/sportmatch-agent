@@ -8,7 +8,6 @@
 ---
 
 ## ✅ FASE 0 — La idea y la prueba (HECHO)
-**Qué es:** tener clara la idea y una web de ejemplo bonita para enseñarla.
 - [x] Idea definida (conectar deportistas para jugar, modo viajero)
 - [x] Prototipo bonito (web de ejemplo, estilo TikTok, con gancho)
 - [x] Primeros interesados reales apuntados
@@ -16,73 +15,92 @@
 ---
 
 ## ✅ FASE 1 — Tu nombre propio en internet (HECHO)
-**Qué es:** comprar tu dirección web propia, para que el enlace sea tuyo **para siempre** y no dependas de Netlify.
-- [x] **Comprado** el dominio `sportmatchapp.es` en DonDominio (23 jun 2026)
-- **Tú haces:** comprarlo (te guío).
-- **Yo hago:** nada aún, espero a que lo tengas.
-- **Coste:** ~6€/año.
+- [x] Dominio `sportmatchapp.es` comprado en DonDominio (23 jun 2026) — ~6€/año
 
 ---
 
-## ✅ FASE 2 — Poner la web en tu nombre (gratis) (HECHO)
-**Qué es:** que tu web se vea en `sportmatchapp.es`, alojada gratis (sin líos de créditos).
-- [x] Montar hosting gratis (Cloudflare Pages) → `sportmatch.pages.dev`
-- [x] Copia de seguridad en Git (rama main) — landing recuperada de Netlify
-- [x] Dominio conectado → **`https://sportmatchapp.es` ONLINE con SSL** 🔒 (30 jun)
-- [ ] ⚠️ Pendiente: reconectar el **formulario de emails** (el de Netlify no captura aquí)
-- **Tú haces:** casi nada (darme acceso o seguir 2 pasos).
-- **Yo hago:** todo el montaje.
-- **Coste:** 0€.
-- **Resultado:** tu web pública con tu nombre, permanente.
+## ✅ FASE 2 — Web en tu dominio, gratis (HECHO)
+- [x] Hosting en Cloudflare Pages — `sportmatchapp.es` online con SSL
+- [x] Copia de seguridad en Git (rama main)
+- [x] Prototipo con gancho: TikTok feed, radar, encuesta, chat de ejemplo
 
 ---
 
-## ⏳ FASE 3 — Convertirla en producto de verdad
-**Qué es:** que la gente cree cuenta, tenga su perfil y se guarde todo de verdad (no de ejemplo).
-- [ ] Elegir dónde se guardan los datos (la "base de datos")
-- [ ] Crear cuentas + perfiles reales
-- **Tú haces:** decidir el coste de la base de datos (gratis o ~23€/mes).
-- **Yo hago:** construirlo.
-- **Coste:** 0€ o ~23€/mes (lo decidimos al llegar aquí).
-- *(Aquí es la primera decisión de pago de verdad. Hasta entonces, todo casi gratis.)*
+## 🔜 FASE 3 — Captar emails de verdad (ESTAMOS AQUÍ)
+
+**Objetivo:** que cada persona que se apunte quede guardada y tú recibas un email avisándote.
+
+### Paso 3.1 — Base de datos ✅ HECHO
+- [x] Supabase creado (`jhyykkgastbwrqlaryeu.supabase.co`)
+- [x] Tabla `lista_espera` creada con campos: nombre, email, deporte, nivel, origen
+- [x] Formulario de `sportmatchapp.es` conectado a Supabase — **registros guardándose**
+
+### Paso 3.2 — Email de aviso ✅ HECHO
+- [x] Edge Function `notify-signup` desplegada en Supabase
+- [x] Dominio `sportmatchapp.es` verificado en Resend (cuenta `betsabe@cypa.es`)
+- [x] Emails salen desde `noreply@sportmatchapp.es` y llegan a `betsabe@cypa.es`
+- [x] CORS arreglado para que funcione desde el navegador
+
+### Paso 3.3 — Email de bienvenida al que se apunta ⏳
+- [ ] Cuando alguien se apunte, recibe un email: "¡Estás en la lista! Te avisamos cuando haya gente cerca."
+- **Coste:** 0€ (incluido en Resend)
 
 ---
 
-## ⏳ FASE 4 — El gancho y el chat
-**Qué es:** lo que engancha y hace que vuelvan.
-- [ ] "¡Match!" cuando hay interés mutuo
-- [ ] Chat entre jugadores (de verdad)
-- [ ] Avisos al móvil ("jugadores nuevos cerca de ti")
-- **Yo hago:** construirlo. **Coste:** incluido.
+## ⏳ FASE 4 — El producto real (perfiles + match)
+
+**Objetivo:** que la gente cree su cuenta, ponga su perfil deportivo y vea jugadores compatibles cerca.
+
+- [ ] Registro e inicio de sesión (Supabase Auth)
+- [ ] Perfil por deporte: nivel, ritmo, actitud, idioma
+- [ ] "Estoy en [ciudad] del [fecha] al [fecha]"
+- [ ] Feed de jugadores compatibles en esa ciudad esas fechas
+- **Coste:** 0€ en Supabase plan gratuito para empezar
 
 ---
 
-## ⏳ FASE 5 — Lanzarlo a la gente
-**Qué es:** abrirlo a la red de tu hijo y a los apuntados, como app web instalable.
-- [ ] Lanzamiento beta + recoger opiniones
-- **Tú haces:** difundir. **Yo hago:** ajustar con lo que digan.
+## ⏳ FASE 5 — El match y el chat
+
+- [ ] Match mutuo: cuando dos jugadores se marcan como "jugar", se crea un chat
+- [ ] Chat dentro de la app
+- [ ] Notificación push: "¡Nuevo jugador compatible en tu ciudad!"
 
 ---
 
-## ⏳ FASE 6 — Apps en las tiendas (App Store / Google Play)
-**Qué es:** estar en las tiendas (credibilidad, descubrimiento, producto vendible).
-- [ ] Publicar en App Store (99€/año) y Google Play (25€ único)
-- *(Solo cuando ya enganche y merezca la pena.)*
+## ⏳ FASE 6 — Beta abierta
+
+- [ ] Lanzamiento a la red del hijo de Betsabé + lista de espera
+- [ ] Recoger feedback, ajustar
+- [ ] App web instalable (PWA) — ya está lista
 
 ---
 
-## ⏳ FASE 7 — Ganar dinero
-**Qué es:** monetizar cuando haya masa crítica (suscripción premium, eventos, clubes…).
+## ⏳ FASE 7 — Apps en las tiendas
+
+- [ ] App Store (99€/año) + Google Play (25€ único)
+- *(Solo cuando enganche y merezca la pena)*
 
 ---
 
-## 🔁 EN PARALELO — Legal
-**Qué es:** que sea legal y vendible (RGPD, términos, menores, seguridad).
-- [ ] Crear el agente legal y que trabaje conmigo
-- *(Empieza cuando entremos en Fase 3.)*
+## ⏳ FASE 8 — Ganar dinero
+
+- Suscripción premium, eventos, clubes…
+- *(Cuando haya masa crítica)*
 
 ---
 
-## 📍 Resumen
-**Fases 0, 1 y 2 COMPLETADAS.** Web online en **https://sportmatchapp.es** (dominio propio + SSL + hosting gratis + backup en Git).
-Pendiente menor: reconectar el formulario de emails. Siguiente gran paso: **Fase 3** (producto real con backend) cuando arranquemos.
+## 🔁 EN PARALELO — Legal (empieza en Fase 4)
+
+- [ ] Política de privacidad + RGPD
+- [ ] Términos de uso
+- [ ] Gestión de menores
+
+---
+
+## 📍 Dónde estamos ahora
+
+**Fases 0, 1, 2 y Paso 3.1 COMPLETADOS.**
+
+- Web online: `https://sportmatchapp.es`
+- Registros guardándose en Supabase
+- **Siguiente:** Paso 3.2 — notificación por email cuando alguien se apunte

@@ -1,61 +1,74 @@
 # SportMatch — Informe de estado (30 junio 2026)
 
 ## Resumen en una línea
-App para conectar deportistas y jugar juntos (con modo viajero). Prototipo listo y online; montando la base definitiva (dominio propio + hosting) antes de construir el producto real.
+App para conectar deportistas y jugar juntos (con modo viajero). Prototipo online en dominio propio, base de datos real funcionando y sistema de emails de aviso operativo.
 
 ---
 
 ## ✅ LO QUE SE HA HECHO
 
-### Producto (prototipo, validado en diseño/UX)
-- **App `app.html`** completa: pantalla de bienvenida, 8 deportes con **diseño propio por deporte**, **feed estilo TikTok** (scroll vertical), **ficha con radar de compatibilidad** por jugador, **encuesta de nivel específica por deporte** (hándicap, grado, ritmo…), **tarjeta "comparte tu nivel"** para stories, **chat de ejemplo**, instalable como app (PWA) y vista previa al compartir (Open Graph).
-- **Landing `index.html`**: titular gancho, "Probar la app", **FAQ**, **radar de compatibilidad**, captación de email.
+### Producto (prototipo listo)
+- **App `app.html`**: bienvenida, 8 deportes con diseño propio, feed estilo TikTok, ficha con radar de compatibilidad, encuesta de nivel por deporte, tarjeta "comparte tu nivel", chat de ejemplo, instalable como PWA, Open Graph.
+- **Landing `index.html`**: titular gancho, FAQ, radar, captación de email.
 
 ### Captación real
-- **6+ personas reales apuntadas** (Daniela, Diego…) vía la red del hijo de Betsabé.
+- **6+ personas reales apuntadas** vía la red del hijo de Betsabé.
 
-### Infraestructura (la base definitiva)
-- **Hosting:** Cloudflare Pages → **funcionando en `sportmatch.pages.dev`** (gratis, sin límites de créditos).
-- **Dominio propio:** `sportmatchapp.es` **comprado** en DonDominio (~5€/año, renovación ~8€).
-- **Nameservers** del dominio cambiados a Cloudflare (aiden + melody) ✅.
-- **Copia de seguridad en Git** (rama main) → nada se puede perder ya.
+### Infraestructura (base definitiva)
+- **Dominio:** `sportmatchapp.es` online con SSL — Cloudflare Pages, gratis, permanente.
+- **Git:** todo el código respaldado en rama main. Nada se puede perder.
+- **Base de datos:** Supabase operativo (`jhyykkgastbwrqlaryeu.supabase.co`).
+  - Tabla `lista_espera` guardando registros reales (nombre, email, deporte, nivel).
+  - Formulario de `sportmatchapp.es` conectado — los registros entran en Supabase.
+- **Emails de aviso:** Edge Function `notify-signup` desplegada en Supabase.
+  - Dominio `sportmatchapp.es` verificado en Resend (cuenta `betsabe@cypa.es`).
+  - Cada registro dispara un email desde `noreply@sportmatchapp.es` a `betsabe@cypa.es`.
 
 ### Estrategia y documentación
-- Decisión: **sacar un producto serio y vendible** (España + fuera), invertir con riesgo controlado.
-- Documentos creados: `estrategia-producto.md`, `PLAN.md` (fases), `ideas-producto.md`, `db-schema.md`, `app-spec.md`, `INFORME.md`.
-- Arquitectura definitiva elegida: **React Native + Expo** (app) · **Supabase** (backend) · **Cloudflare Pages** (web) · **Stripe** (pagos futuros) · **ES+EN**.
+- Arquitectura definitiva: React Native + Expo · Supabase · Cloudflare Pages · Stripe (futuro).
+- Documentos: `PLAN.md`, `estrategia-producto.md`, `app-spec.md`, `db-schema.md`.
 
 ---
 
 ## ⏳ LO QUE FALTA
 
-### Inmediato (esta semana)
-- [ ] **Esperar propagación del `.es`** (horas, hasta 24-48h) → Cloudflare activará el dominio.
-- [ ] **Conectar el dominio**: al activarse, añadir `sportmatchapp.es` en Cloudflare Pages → Custom domains (1 clic). Tras esto, la web se verá en **sportmatchapp.es**.
-- [ ] **Reconectar el formulario de emails** en la versión de Cloudflare: el formulario actual usaba "Netlify Forms" y **fuera de Netlify no captura**. Hay que sustituirlo (opción gratis: Web3Forms; o ya directamente a Supabase en la Fase 3).
-- [ ] (Opcional) Subir el backup también a **GitHub** (copia en la nube, fuera del ordenador).
+### Inmediato (próxima sesión)
+- [ ] **Probar flujo completo:** apuntarse en `sportmatchapp.es` → verificar que llega email a `betsabe@cypa.es` desde el formulario real (pendiente de confirmar).
+- [ ] **Email de bienvenida al apuntado:** cuando alguien se registra, recibe un email "¡Estás en la lista! Te avisamos cuando haya gente cerca." (Paso 3.3).
+- [ ] **Conectar despliegue automático a Git** — para no tener que arrastrar la carpeta `web/` manualmente cada vez.
 
-### Fase 3 — Producto real (cuando arranquemos a construir)
-- [ ] Backend: **Supabase Pro (~23€/mes)** o **Firebase (gratis)** — decisión al llegar.
-- [ ] Cuentas reales (registro/login), perfiles por deporte, guardar nivel y ubicación.
-- [ ] **Match por km de verdad** (PostGIS), chat real, notificaciones push.
+### Fase 4 — Producto real
+- [ ] Registro/login (Supabase Auth).
+- [ ] Perfil por deporte: nivel, ritmo, actitud, idioma.
+- [ ] "Estoy en [ciudad] del [fecha] al [fecha]".
+- [ ] Feed de jugadores compatibles en esa ciudad esas fechas.
+
+### Fase 5 — Match y chat
+- [ ] Match mutuo + chat real.
+- [ ] Notificaciones push.
 
 ### En paralelo
-- [ ] **Agente legal**: RGPD, términos, política de menores, seguridad. (Vendibilidad.)
+- [ ] **Legal:** RGPD, términos de uso, política de menores.
 
 ### Más adelante
-- [ ] Gancho avanzado sobre el producto real ("¡Match!" + push, avisos de viajeros cerca, rachas/logros).
-- [ ] Lanzamiento a la red del hijo (beta).
-- [ ] **Apps nativas** en App Store / Google Play (cuando enganche).
-- [ ] **Monetización** (premium, eventos, clubes) con masa crítica.
+- [ ] Beta abierta con la red del hijo.
+- [ ] Apps en App Store / Google Play.
+- [ ] Monetización (premium, eventos, clubes).
 
 ---
 
-## 💰 Costes
-- Pagado: dominio `.es` (~5€).
-- Recurrente actual: **0€** (hosting gratis).
-- Próximo coste (Fase 3, opcional): Supabase Pro ~23€/mes — o seguir gratis con Firebase.
-- Futuro (al publicar apps): Apple 99€/año + Google 25€ único.
+## 💰 Costes actuales
+| Concepto | Coste |
+|----------|-------|
+| Dominio `sportmatchapp.es` | ~6€/año |
+| Hosting Cloudflare Pages | 0€ |
+| Supabase (plan gratuito) | 0€ |
+| Resend (plan gratuito, 3.000 emails/mes) | 0€ |
+| **Total mensual** | **0€** |
 
-## 📍 Próximo paso inmediato
-Esperar el email de Cloudflare **"sportmatchapp.es is now active"** → añadir el dominio en Pages → Custom domains. Con eso, **la web vivirá en `sportmatchapp.es`**, tu dirección definitiva.
+Próximo coste real: Supabase Pro (~25€/mes) cuando el producto tenga usuarios activos.
+
+---
+
+## 📍 Próximo paso
+Confirmar que el email de aviso llega desde el formulario real, luego montar el **email de bienvenida al apuntado** (Paso 3.3).

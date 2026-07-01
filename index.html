@@ -763,9 +763,7 @@
         </div>
       </div>
 
-      <form action='/' id='modal-form' method='POST' name='lista-espera' target='sm-hidden-iframe'>
-        <input type="hidden" name="form-name" value="lista-espera" />
-        <input type="hidden" name="bot-field" style="display:none" />
+      <form id='modal-form'>
         <input type="hidden" name="contacto" id="hidden-contacto" value="" />
         <div class="form-group">
           <label>Nombre</label>
@@ -789,8 +787,7 @@
   </div>
 </div>
 
-<!-- Destino oculto del envío del formulario (POST nativo, robusto en móvil/in-app browsers) -->
-<iframe name="sm-hidden-iframe" id="sm-hidden-iframe" style="display:none" title="envío"></iframe>
+<!-- El envío del formulario lo gestiona Supabase vía JavaScript (más abajo) -->
 
 <script>
   document.querySelectorAll('.pill').forEach(btn => {
@@ -830,23 +827,52 @@
     document.getElementById('modal').classList.remove('open');
   }
 
-  // Envío robusto: POST nativo dentro de un iframe oculto.
-  // Funciona en Safari/Chrome y en los mini-navegadores de WhatsApp/Instagram,
-  // donde fetch/AJAX suele fallar. La validación de campos obligatorios sigue
-  // aplicándose: si falta nombre o email, el navegador bloquea el envío.
-  var smSubmitted = false;
+  // Envío del registro directamente a Supabase (tu base de datos).
+  var SUPABASE_URL = 'https://jhyykkgastbwrqlaryeu.supabase.co';
+  var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpoeXlra2dhc3Rid3JxbGFyeWV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4MTA4MDEsImV4cCI6MjA5ODM4NjgwMX0.MVdAY4evCAcQxuo-hsX30b-yqR1BU_sBUOj-zFL9_LA';
 
-  document.getElementById('modal-form').addEventListener('submit', function() {
-    smSubmitted = true;
+  document.getElementById('modal-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var form = e.target;
     var btn = document.getElementById('modal-btn-text');
+    var nombre = form.nombre.value.trim();
+    var email = form.email.value.trim();
+    var contacto = document.getElementById('hidden-contacto').value;
+    if (!nombre || !email) return; // la validación required ya lo cubre
     btn.textContent = 'Enviando…';
     btn.disabled = true;
-  });
 
-  document.getElementById('sm-hidden-iframe').addEventListener('load', function() {
-    if (!smSubmitted) return; // ignora la carga inicial del iframe
-    document.getElementById('modal-form-area').style.display = 'none';
-    document.getElementById('modal-success').style.display = 'block';
+    fetch(SUPABASE_URL + '/rest/v1/lista_espera', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({
+        nombre: nombre,
+        email: email,
+        origen: contacto ? ('landing · interés en ' + contacto) : 'landing'
+      })
+    }).then(function(r) {
+      if (!r.ok) throw new Error('error ' + r.status);
+      // Avisar por email
+      fetch(SUPABASE_URL + '/functions/v1/notify-signup', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ record: { nombre: nombre, email: email } })
+      }).catch(function() {});
+      document.getElementById('modal-form-area').style.display = 'none';
+      document.getElementById('modal-success').style.display = 'block';
+    }).catch(function() {
+      btn.textContent = 'Reintentar →';
+      btn.disabled = false;
+      alert('Ups, no se pudo enviar. Revisa tu conexión e inténtalo de nuevo.');
+    });
   });
 </script>
 
