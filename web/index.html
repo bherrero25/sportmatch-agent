@@ -874,6 +874,7 @@
       alert('Ups, no se pudo enviar. Revisa tu conexión e inténtalo de nuevo.');
     });
   });
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
 </script>
 
 </body>
