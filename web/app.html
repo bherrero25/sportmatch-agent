@@ -706,6 +706,22 @@
       { q: '¿Cuál es tu nivel?', opts: [['Recreativo, por diversión', 1, 'Recreativo'], ['Juego a menudo', 2, 'Habitual'], ['Federado / competición', 3, 'Federado']] },
       { q: '¿Cómo te ves en pista?', opts: [['Aprendiendo', 1], ['Me defiendo', 2], ['Buen nivel', 3]] },
     ],
+    futbol: [
+      { q: '¿Cómo juegas habitualmente?', opts: [['Pachanga esporádica', 1, 'Recreativo'], ['Liga de empresa / sala', 2, 'Habitual'], ['Categoría federada', 3, 'Federado']] },
+      { q: '¿Cuál es tu posición?', opts: [['Donde haga falta', 1], ['Defensa o centrocampista', 2], ['Delantero / portero', 3]] },
+    ],
+    ciclismo: [
+      { q: '¿Cuál es tu ritmo medio?', opts: [['Paseos tranquilos (<20 km/h)', 1, 'Suave'], ['Fondo medio (20-28 km/h)', 2, 'Medio'], ['Ritmo alto (>28 km/h)', 3, 'Alto']] },
+      { q: '¿Qué tipo de ciclismo haces?', opts: [['MTB / montaña', 1], ['Carretera', 2], ['Gravel / mixto', 3]] },
+    ],
+    surf: [
+      { q: '¿Cuál es tu nivel en el agua?', opts: [['Novato, pocas veces', 1, 'Novato'], ['Me mantengo en olas medias', 2, 'Intermedio'], ['Olas grandes, buena técnica', 3, 'Avanzado']] },
+      { q: '¿Qué tipo de tabla usas?', opts: [['Longboard / foam', 1], ['Funboard / fish', 2], ['Shortboard', 3]] },
+    ],
+    submarinismo: [
+      { q: '¿Qué titulación tienes?', opts: [['Ninguna todavía', 1, 'Sin título'], ['Open Water / OWD', 2, 'Open Water'], ['Advanced o superior', 3, 'Advanced+']] },
+      { q: '¿Cuántas inmersiones llevas?', opts: [['Menos de 10', 1], ['Entre 10 y 50', 2], ['Más de 50', 3]] },
+    ],
   };
   function survey() { return SURVEYS[current.key]; }
   let answers = [];
