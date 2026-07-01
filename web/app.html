@@ -9,6 +9,7 @@
   <link rel="icon" href="favicon.png" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <link rel="manifest" href="manifest.json" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <!-- Vista previa al compartir (WhatsApp, Instagram, etc.) -->
   <meta property="og:type" content="website" />
   <meta property="og:title" content="SportMatch — Elige tu deporte y encuentra con quién jugar" />
@@ -267,6 +268,25 @@
   </style>
 </head>
 <body>
+
+<!-- PANTALLA DE LOGIN / REGISTRO -->
+<div class="welcome" id="auth-screen" style="z-index:9999">
+  <div class="welcome-card" style="gap:14px">
+    <div class="welcome-logo">Sport<em>Match</em></div>
+    <div id="auth-tabs" style="display:flex;gap:8px;width:100%">
+      <button id="tab-login" onclick="authTab('login')" style="flex:1;padding:10px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-weight:800;cursor:pointer">Entrar</button>
+      <button id="tab-signup" onclick="authTab('signup')" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid #e2e8f0;background:#fff;color:#374151;font-weight:800;cursor:pointer">Registrarse</button>
+    </div>
+    <form id="auth-form" style="display:flex;flex-direction:column;gap:10px;width:100%">
+      <input id="auth-nombre" type="text" placeholder="Tu nombre" style="display:none;padding:13px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1rem;width:100%" />
+      <input id="auth-email" type="email" placeholder="Tu email" required style="padding:13px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1rem;width:100%" />
+      <input id="auth-pass" type="password" placeholder="Contraseña" required style="padding:13px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1rem;width:100%" />
+      <button type="submit" id="auth-btn" class="welcome-btn" style="margin-top:4px">Entrar →</button>
+    </form>
+    <p id="auth-msg" style="font-size:0.85rem;color:#ef4444;text-align:center;min-height:18px"></p>
+    <p style="font-size:0.75rem;color:#9ca3af;text-align:center">Sin spam. Tus datos solo se usan para encontrar compañeros de juego.</p>
+  </div>
+</div>
 
 <!-- BIENVENIDA (solo la primera vez) -->
 <div class="welcome" id="welcome">
@@ -1017,6 +1037,62 @@
     let seen = false;
     try { seen = !!localStorage.getItem('sm_seen'); } catch (_) {}
     if (!seen) document.getElementById('welcome').classList.add('show');
+  })();
+
+  /* ---------- AUTH ---------- */
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  let currentUser = null;
+  let authMode = 'login';
+
+  function authTab(mode) {
+    authMode = mode;
+    const isSignup = mode === 'signup';
+    document.getElementById('auth-nombre').style.display = isSignup ? 'block' : 'none';
+    document.getElementById('auth-btn').textContent = isSignup ? 'Crear cuenta →' : 'Entrar →';
+    document.getElementById('tab-login').style.background = isSignup ? '#fff' : 'var(--accent)';
+    document.getElementById('tab-login').style.color = isSignup ? '#374151' : '#fff';
+    document.getElementById('tab-login').style.border = isSignup ? '1.5px solid #e2e8f0' : 'none';
+    document.getElementById('tab-signup').style.background = isSignup ? 'var(--accent)' : '#fff';
+    document.getElementById('tab-signup').style.color = isSignup ? '#fff' : '#374151';
+    document.getElementById('tab-signup').style.border = isSignup ? 'none' : '1.5px solid #e2e8f0';
+    document.getElementById('auth-msg').textContent = '';
+  }
+
+  document.getElementById('auth-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const email = document.getElementById('auth-email').value.trim();
+    const pass = document.getElementById('auth-pass').value;
+    const nombre = document.getElementById('auth-nombre').value.trim();
+    const btn = document.getElementById('auth-btn');
+    const msg = document.getElementById('auth-msg');
+    btn.disabled = true;
+    btn.textContent = '…';
+    msg.textContent = '';
+
+    if (authMode === 'signup') {
+      const { data, error } = await sb.auth.signUp({ email, password: pass });
+      if (error) { msg.textContent = error.message; btn.disabled = false; btn.textContent = 'Crear cuenta →'; return; }
+      if (data.user) {
+        await sb.from('profiles').upsert({ id: data.user.id, nombre: nombre || email.split('@')[0], deporte: null, nivel: null, ciudad: null });
+        msg.style.color = '#16a34a';
+        msg.textContent = '¡Cuenta creada! Revisa tu email para confirmarla.';
+        btn.textContent = 'Crear cuenta →'; btn.disabled = false;
+      }
+    } else {
+      const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+      if (error) { msg.textContent = 'Email o contraseña incorrectos'; btn.disabled = false; btn.textContent = 'Entrar →'; return; }
+      currentUser = data.user;
+      document.getElementById('auth-screen').classList.remove('show');
+    }
+  });
+
+  (async function initAuth() {
+    const { data } = await sb.auth.getSession();
+    if (data.session) {
+      currentUser = data.session.user;
+    } else {
+      document.getElementById('auth-screen').classList.add('show');
+    }
   })();
 
   renderHome();
