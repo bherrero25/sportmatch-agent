@@ -632,7 +632,7 @@
   }
 
   /* ---------- SPORT VIEW ---------- */
-  function openSport(key) {
+  async function openSport(key) {
     current = SPORT_BY_KEY[key];
     applyTheme(current);
     document.getElementById('sh-emoji').textContent = current.emoji;
@@ -641,10 +641,38 @@
     document.getElementById('topbar').classList.add('in-sport');
     filterLv = 'all'; filterKm = 100;
     resetChips();
-    renderCards();
     document.getElementById('view-home').style.display = 'none';
     document.getElementById('view-sport').style.display = 'block';
     window.scrollTo(0, 0);
+
+    // Cargar usuarios reales de Supabase para este deporte
+    const { data: realUsers } = await sb.from('profiles')
+      .select('nombre, nivel, ciudad')
+      .eq('deporte', key)
+      .neq('id', currentUser ? currentUser.id : '')
+      .not('ciudad', 'is', null);
+
+    if (realUsers && realUsers.length > 0) {
+      const realProfiles = realUsers.map(u => ({
+        name: u.nombre || 'Deportista',
+        age: null,
+        loc: u.ciudad,
+        lv: u.nivel || 2,
+        km: 10,
+        tags: ['Real', nivelLabel(u.nivel)],
+        bio: 'Usuario real de SportMatch.',
+        real: true,
+      }));
+      // Mezclar reales al principio
+      current._realProfiles = realProfiles;
+    } else {
+      current._realProfiles = [];
+    }
+    renderCards();
+  }
+
+  function nivelLabel(n) {
+    return n === 1 ? 'Principiante' : n === 3 ? 'Avanzado' : 'Intermedio';
   }
 
   function goHome() {
@@ -663,7 +691,8 @@
   let FEED = [];
 
   function renderCards() {
-    FEED = current.profiles.filter(p =>
+    const allProfiles = [...(current._realProfiles || []), ...current.profiles];
+    FEED = allProfiles.filter(p =>
       (filterLv === 'all' || String(p.lv) === filterLv) && p.km <= filterKm
     );
     renderFeed();
