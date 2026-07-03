@@ -1141,11 +1141,14 @@
 
     const total = (pendientes?.length || 0) + (aceptadas?.length || 0);
     const badge = document.getElementById('notif-badge');
-    if (total > 0) {
-      badge.textContent = total;
-      badge.style.display = 'flex';
-    } else {
-      badge.style.display = 'none';
+    badge.textContent = total;
+    badge.style.display = total > 0 ? 'flex' : 'none';
+
+    // Marcar aceptadas como vistas para que no sigan en el badge
+    if (aceptadas && aceptadas.length > 0) {
+      await sb.from('solicitudes_match')
+        .update({ estado: 'visto' })
+        .in('id', aceptadas.map(s => s.id));
     }
 
     const panel = document.getElementById('notif-panel');
