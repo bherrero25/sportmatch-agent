@@ -1053,16 +1053,23 @@
     const compat = 80 + (hashStr(p.name + current.key) % 18);
     const tags = p.tags.map((t, i) => `<span class="tag ${i === 0 ? 'tag-green' : ''}">${t}</span>`).join('');
     const fname = p.name.split(' ')[0];
+    const title = p.age ? `${p.name} · ${p.age}` : p.name;
+    const bioHtml = p.real
+      ? `<p style="margin-bottom:16px;color:#6b7280;font-size:0.9rem">Usuario real de SportMatch en <b>${p.loc}</b>.</p>`
+      : `<div class="pcard-bio" style="margin-bottom:16px">"${p.bio}"</div>`;
+    const actionBtn = p.real
+      ? `<button class="modal-btn" onclick="closeProfile(); openSurvey();">${current.emoji} Quiero jugar con ${fname}</button>`
+      : `<button class="modal-btn" style="background:#fff;color:var(--accent);border:1.5px solid var(--accent);margin-bottom:10px" onclick="closeProfile(); openChat(lastProfile);">💬 Ver cómo coordináis</button>
+         <button class="modal-btn" onclick="closeProfile(); openSurvey();">${current.emoji} Jugar con ${fname}</button>`;
     document.getElementById('profile-modal').innerHTML = `
-      <div class="modal-head"><h3>${p.name} · ${p.age}</h3><button class="modal-close" onclick="closeProfile()">✕</button></div>
+      <div class="modal-head"><h3>${title}</h3><button class="modal-close" onclick="closeProfile()">✕</button></div>
       <p class="modal-sub" style="margin-bottom:10px">📍 ${p.loc}</p>
       <div style="text-align:center;margin-bottom:2px"><span class="radar-badge2">${compat}% compatible contigo</span></div>
       <div style="display:flex;justify-content:center">${radarSVG(ME, radarValues(p))}</div>
       <div class="radar-legend2"><span><i style="background:#16a34a"></i>Tú</span><span><i style="background:#6366f1"></i>${fname}</span></div>
       <div class="pcard-tags" style="margin:14px 0 8px">${tags}</div>
-      <div class="pcard-bio" style="margin-bottom:16px">"${p.bio}"</div>
-      <button class="modal-btn" style="background:#fff;color:var(--accent);border:1.5px solid var(--accent);margin-bottom:10px" onclick="closeProfile(); openChat(lastProfile);">💬 Ver cómo coordináis</button>
-      <button class="modal-btn" onclick="closeProfile(); openSurvey();">${current.emoji} Jugar con ${fname}</button>`;
+      ${bioHtml}
+      ${actionBtn}`;
     document.getElementById('profile-overlay').classList.add('open');
   }
 
