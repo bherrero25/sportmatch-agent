@@ -665,12 +665,11 @@
     window.scrollTo(0, 0);
 
     // Cargar usuarios reales de Supabase para este deporte
-    const { data: realUsers, error: realErr } = await sb.from('profiles')
+    const { data: realUsers } = await sb.from('profiles')
       .select('id, nombre, nivel, ciudad, email')
       .eq('deporte', key)
       .neq('id', currentUser ? currentUser.id : '')
       .not('ciudad', 'is', null);
-    alert('DEBUG: ' + (realErr ? realErr.message : 'ok') + ' | usuarios: ' + (realUsers ? realUsers.length : 0) + ' | user: ' + (currentUser ? currentUser.email : 'null'));
 
     if (realUsers && realUsers.length > 0) {
       const realProfiles = realUsers.map(u => ({
