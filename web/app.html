@@ -367,6 +367,14 @@
       <button class="cta" id="sh-cta" onclick="openSurvey()">Apuntarme →</button>
     </div>
 
+    <div style="padding:12px 18px 0">
+      <div style="display:flex;gap:8px;align-items:center;background:#f1f5f9;border-radius:12px;padding:10px 14px">
+        <span style="font-size:1.1rem">📍</span>
+        <input id="city-search" type="text" placeholder="¿En qué ciudad buscas?" style="flex:1;border:none;background:transparent;font-size:0.95rem;outline:none;color:#111" oninput="onCityInput()" />
+        <button id="city-clear" onclick="clearCity()" style="display:none;border:none;background:none;font-size:1rem;cursor:pointer;color:#9ca3af">✕</button>
+      </div>
+    </div>
+
     <div class="filters">
       <div class="filter-block">
         <span>Nivel</span>
@@ -690,11 +698,30 @@
 
   let FEED = [];
 
+  let cityQuery = '';
+
+  function onCityInput() {
+    const val = document.getElementById('city-search').value.trim();
+    cityQuery = val.toLowerCase();
+    document.getElementById('city-clear').style.display = val ? 'block' : 'none';
+    renderCards();
+  }
+
+  function clearCity() {
+    document.getElementById('city-search').value = '';
+    cityQuery = '';
+    document.getElementById('city-clear').style.display = 'none';
+    renderCards();
+  }
+
   function renderCards() {
     const allProfiles = [...(current._realProfiles || []), ...current.profiles];
-    FEED = allProfiles.filter(p =>
-      (filterLv === 'all' || String(p.lv) === filterLv) && p.km <= filterKm
-    );
+    FEED = allProfiles.filter(p => {
+      if (filterLv !== 'all' && String(p.lv) !== filterLv) return false;
+      if (p.km > filterKm) return false;
+      if (cityQuery && !p.loc.toLowerCase().includes(cityQuery)) return false;
+      return true;
+    });
     renderFeed();
   }
 
