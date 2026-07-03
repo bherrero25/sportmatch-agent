@@ -759,7 +759,9 @@
         <div class="feed-bio">"${p.bio}"</div>
         <div class="feed-btns">
           <button class="feed-btn ghost" onclick="openProfile(FEED[${i}])">📊 Compatibilidad</button>
-          <button class="feed-btn solid" onclick="openSurvey()">${current.emoji} Jugar</button>
+          ${p.real && p.uid
+            ? `<button class="feed-btn solid" id="match-btn-${p.uid}" onclick="sendMatchRequest('${p.uid}','${p.name.split(' ')[0]}')">${current.emoji} Jugar con ${p.name.split(' ')[0]}</button>`
+            : `<button class="feed-btn solid" onclick="openSurvey()">${current.emoji} Jugar</button>`}
         </div>
       </div>
     </div>`;
