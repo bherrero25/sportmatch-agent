@@ -1152,14 +1152,16 @@
     let html = '';
 
     if (aceptadas && aceptadas.length > 0) {
+      html += '<p style="font-size:0.8rem;font-weight:800;color:#16a34a;margin-bottom:8px">✅ MATCHES ACEPTADOS</p>';
       html += aceptadas.map(s => `
         <div style="background:#f0fdf4;border-radius:12px;padding:14px 16px;margin-bottom:10px;border:1.5px solid #bbf7d0">
-          <p style="font-weight:800;color:#16a34a">✅ ¡Match! ${s.deporte_emoji}</p>
+          <p style="font-weight:800;color:#16a34a">${s.deporte_emoji} ¡Match!</p>
           <p style="margin-top:4px;color:#111">Tu solicitud para ${verbDeporte(s.deporte)} fue <b>aceptada</b>. Pronto podréis chatear.</p>
         </div>`).join('');
     }
 
     if (pendientes && pendientes.length > 0) {
+      html += '<p style="font-size:0.8rem;font-weight:800;color:#374151;margin:12px 0 8px">🔔 NUEVAS SOLICITUDES</p>';
       html += pendientes.map(s => `
         <div style="background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,0.08)">
           <p style="font-weight:800;margin-bottom:4px">${s.deporte_emoji} <b>${s.from_nombre}</b> quiere ${verbDeporte(s.deporte)} contigo</p>
