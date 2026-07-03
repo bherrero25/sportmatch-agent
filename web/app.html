@@ -1169,9 +1169,30 @@
 
     const matches = [...(misMatchesEnviados || []), ...(misMatchesRecibidos || [])];
 
+    // Mensajes no leídos de otros usuarios en mis matches
+    let mensajesNoLeidos = [];
+    if (matches.length > 0) {
+      const matchIds = matches.map(m => m.id);
+      const { data: noLeidos } = await sb.from('mensajes')
+        .select('match_id')
+        .in('match_id', matchIds)
+        .neq('from_id', currentUser.id)
+        .eq('leido', false);
+      mensajesNoLeidos = noLeidos || [];
+    }
+
+    const noLeidosPorMatch = {};
+    mensajesNoLeidos.forEach(m => {
+      noLeidosPorMatch[m.match_id] = (noLeidosPorMatch[m.match_id] || 0) + 1;
+    });
+
+    const totalNoLeidos = mensajesNoLeidos.length;
+    const totalPendientes = pendientes?.length || 0;
+    const totalBadge = totalPendientes + totalNoLeidos;
+
     const badge = document.getElementById('notif-badge');
-    badge.textContent = pendientes?.length || 0;
-    badge.style.display = (pendientes?.length > 0) ? 'flex' : 'none';
+    badge.textContent = totalBadge;
+    badge.style.display = totalBadge > 0 ? 'flex' : 'none';
 
     const panel = document.getElementById('notif-panel');
     let html = '';
@@ -1181,11 +1202,16 @@
       html += matches.map(s => {
         const esEnviado = s.from_id === currentUser.id;
         const otroNombre = esEnviado ? (s.to_nombre || 'Tu compañero') : s.from_nombre;
+        const nuevos = noLeidosPorMatch[s.id] || 0;
+        const btnLabel = nuevos > 0 ? `💬 ${nuevos} mensaje${nuevos > 1 ? 's' : ''} nuevo${nuevos > 1 ? 's' : ''}` : '💬 Chatear';
+        const btnStyle = nuevos > 0
+          ? 'width:100%;padding:10px;background:#15803d;color:#fff;border:none;border-radius:8px;font-weight:800;cursor:pointer;box-shadow:0 0 0 3px #bbf7d0'
+          : 'width:100%;padding:10px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-weight:800;cursor:pointer';
         return `
         <div style="background:#f0fdf4;border-radius:12px;padding:14px 16px;margin-bottom:10px;border:1.5px solid #bbf7d0">
-          <p style="font-weight:800;color:#16a34a;margin-bottom:4px">${s.deporte_emoji} ${otroNombre}</p>
+          <p style="font-weight:800;color:#16a34a;margin-bottom:4px">${s.deporte_emoji} ${escapeHtml(otroNombre)}</p>
           <p style="color:#374151;font-size:0.9rem;margin-bottom:10px">${s.deporte} · ¡Match confirmado!</p>
-          <button onclick="document.getElementById('notif-overlay').classList.remove('open'); openChat('${s.id}','${otroNombre.replace(/'/g,"\\'")}');" style="width:100%;padding:10px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-weight:800;cursor:pointer">💬 Chatear</button>
+          <button onclick="document.getElementById('notif-overlay').classList.remove('open'); openChat('${s.id}','${otroNombre.replace(/'/g,"\\'")}');" style="${btnStyle}">${btnLabel}</button>
         </div>`;
       }).join('');
     }
@@ -1256,6 +1282,11 @@
     if (!msgs || msgs.length === 0) {
       body.innerHTML = '<p style="text-align:center;color:#9ca3af;padding:20px;font-size:0.9rem">¡Di hola! 👋</p>';
       return;
+    }
+    // Marcar como leídos los mensajes del otro que aún no lo estaban
+    const sinLeer = msgs.filter(m => m.from_id !== currentUser.id && !m.leido).map(m => m.id);
+    if (sinLeer.length > 0) {
+      sb.from('mensajes').update({ leido: true }).in('id', sinLeer);
     }
     const wasAtBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 40;
     body.innerHTML = msgs.map(m => `
