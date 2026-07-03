@@ -1118,6 +1118,16 @@
     });
     if (!error) {
       if (btn) { btn.textContent = '✅ ¡Solicitud enviada!'; btn.style.background = '#f0fdf4'; btn.style.color = '#16a34a'; }
+      // Enviar notificación push
+      fetch(SUPABASE_URL + '/functions/v1/send-push', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to_user_id: toUid,
+          title: `${current.emoji} ¡Nueva solicitud en SportMatch!`,
+          body: `${fromNombre} quiere ${verbDeporte(current.name)} contigo`,
+        }),
+      });
     } else {
       if (btn) { btn.disabled = false; btn.textContent = `${current.emoji} Quiero jugar con ${toFname}`; }
     }
@@ -1334,11 +1344,35 @@
       currentUser = data.session.user;
       await checkProfile(currentUser);
       await loadNotifications();
+      subscribePush(currentUser.id);
     } else {
       document.getElementById('auth-screen').classList.add('show');
     }
     renderHome();
   })();
+  const VAPID_PUBLIC = 'BBjkw6FzxpbslBpR0K3c-TJBqqsMmO_KoP-WLUwoyiJMD1vJPyfHYGXdkLPtChfZrxQHO9vMYG8yyHvswn_5Gro';
+
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = atob(base64);
+    return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+  }
+
+  async function subscribePush(userId) {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') return;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC),
+      });
+      await sb.from('push_subscriptions').upsert({ user_id: userId, subscription: sub.toJSON() }, { onConflict: 'user_id' });
+    } catch (e) { console.log('Push no disponible', e); }
+  }
+
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
 </script>
 
