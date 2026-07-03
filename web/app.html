@@ -1118,7 +1118,7 @@
     });
     if (!error) {
       if (btn) { btn.textContent = '✅ ¡Solicitud enviada!'; btn.style.background = '#f0fdf4'; btn.style.color = '#16a34a'; }
-      // Enviar notificación push
+      // Notificación push
       fetch(SUPABASE_URL + '/functions/v1/send-push', {
         method: 'POST',
         headers: { 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' },
@@ -1126,6 +1126,17 @@
           to_user_id: toUid,
           title: `${current.emoji} ¡Nueva solicitud en SportMatch!`,
           body: `${fromNombre} quiere ${verbDeporte(current.name)} contigo`,
+        }),
+      });
+      // Email de aviso
+      fetch(SUPABASE_URL + '/functions/v1/send-match', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to_user_id: toUid,
+          from_nombre: fromNombre,
+          deporte: current.name,
+          deporte_emoji: current.emoji,
         }),
       });
     } else {

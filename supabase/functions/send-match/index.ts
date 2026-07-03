@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,23 +10,40 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const { to_email, to_nombre, from_nombre, from_email, deporte, deporte_emoji } = await req.json();
+    const { to_user_id, from_nombre, deporte, deporte_emoji } = await req.json();
     const RESEND_KEY = Deno.env.get("RESEND_API_KEY");
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("email, nombre")
+      .eq("id", to_user_id)
+      .single();
+
+    if (!profile?.email) {
+      return new Response(JSON.stringify({ ok: true, reason: "no email" }), { status: 200, headers: corsHeaders });
+    }
+
+    const fname = profile.nombre?.split(" ")[0] || "deportista";
 
     await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { "Authorization": `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         from: "SportMatch <noreply@sportmatchapp.es>",
-        to: [to_email],
-        subject: `${deporte_emoji} ${from_nombre} quiere jugar ${deporte} contigo`,
+        to: [profile.email],
+        subject: `${deporte_emoji} ${from_nombre} quiere jugar contigo en SportMatch`,
         html: `
           <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 16px">
-            <h1 style="color:#16a34a;font-size:1.5rem">¡Alguien quiere jugar contigo! ${deporte_emoji}</h1>
-            <p style="font-size:1rem;color:#111"><b>${from_nombre}</b> ha visto tu perfil en <b>SportMatch</b> y quiere jugar <b>${deporte}</b> contigo.</p>
+            <h1 style="color:#16a34a;font-size:1.4rem">${deporte_emoji} ¡Tienes una solicitud!</h1>
+            <p style="font-size:1rem;color:#111">Hola <b>${fname}</b>,</p>
+            <p style="color:#444"><b>${from_nombre}</b> quiere jugar a <b>${deporte}</b> contigo en SportMatch.</p>
             <div style="background:#f0fdf4;border-radius:8px;padding:16px;margin:24px 0">
-              <p style="margin:0;color:#16a34a;font-weight:bold">Respóndele directamente:</p>
-              <p style="margin:8px 0 0;color:#444;font-size:0.9rem">${from_email}</p>
+              <p style="margin:0;color:#16a34a;font-weight:bold">Abre la app para aceptar o rechazar.</p>
             </div>
             <a href="https://sportmatchapp.es/app.html" style="display:inline-block;background:#16a34a;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold">Abrir SportMatch →</a>
             <p style="margin-top:32px;color:#888;font-size:0.8rem">SportMatch · sportmatchapp.es</p>
