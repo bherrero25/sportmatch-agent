@@ -1288,9 +1288,8 @@
     } else {
       document.getElementById('auth-screen').classList.add('show');
     }
+    renderHome();
   })();
-
-  renderHome();
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
 </script>
 
