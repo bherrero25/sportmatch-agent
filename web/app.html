@@ -1124,24 +1124,55 @@
 
   async function loadNotifications() {
     if (!currentUser) return;
-    const { data } = await sb.from('solicitudes_match')
+
+    // Solicitudes pendientes que me han enviado
+    const { data: pendientes } = await sb.from('solicitudes_match')
       .select('*')
       .eq('to_id', currentUser.id)
       .eq('estado', 'pendiente')
       .order('created_at', { ascending: false });
-    if (!data || data.length === 0) return;
-    const panel = document.getElementById('notif-panel');
+
+    // Solicitudes que yo envié y fueron aceptadas
+    const { data: aceptadas } = await sb.from('solicitudes_match')
+      .select('*')
+      .eq('from_id', currentUser.id)
+      .eq('estado', 'aceptado')
+      .order('created_at', { ascending: false });
+
+    const total = (pendientes?.length || 0) + (aceptadas?.length || 0);
     const badge = document.getElementById('notif-badge');
-    badge.textContent = data.length;
-    badge.style.display = 'flex';
-    panel.innerHTML = data.map(s => `
-      <div style="background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,0.08)">
-        <p style="font-weight:800;margin-bottom:4px">${s.deporte_emoji} <b>${s.from_nombre}</b> quiere ${verbDeporte(s.deporte)} contigo en ${s.deporte}</p>
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <button onclick="responderMatch('${s.id}','aceptado',this)" style="flex:1;padding:10px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-weight:800;cursor:pointer">✅ Aceptar</button>
-          <button onclick="responderMatch('${s.id}','rechazado',this)" style="flex:1;padding:10px;background:#f1f5f9;color:#374151;border:none;border-radius:8px;font-weight:700;cursor:pointer">✕ Rechazar</button>
-        </div>
-      </div>`).join('');
+    if (total > 0) {
+      badge.textContent = total;
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
+
+    const panel = document.getElementById('notif-panel');
+    let html = '';
+
+    if (aceptadas && aceptadas.length > 0) {
+      html += aceptadas.map(s => `
+        <div style="background:#f0fdf4;border-radius:12px;padding:14px 16px;margin-bottom:10px;border:1.5px solid #bbf7d0">
+          <p style="font-weight:800;color:#16a34a">✅ ¡Match! ${s.deporte_emoji}</p>
+          <p style="margin-top:4px;color:#111">Tu solicitud para ${verbDeporte(s.deporte)} fue <b>aceptada</b>. Pronto podréis chatear.</p>
+        </div>`).join('');
+    }
+
+    if (pendientes && pendientes.length > 0) {
+      html += pendientes.map(s => `
+        <div style="background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,0.08)">
+          <p style="font-weight:800;margin-bottom:4px">${s.deporte_emoji} <b>${s.from_nombre}</b> quiere ${verbDeporte(s.deporte)} contigo</p>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button onclick="responderMatch('${s.id}','aceptado',this)" style="flex:1;padding:10px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-weight:800;cursor:pointer">✅ Aceptar</button>
+            <button onclick="responderMatch('${s.id}','rechazado',this)" style="flex:1;padding:10px;background:#f1f5f9;color:#374151;border:none;border-radius:8px;font-weight:700;cursor:pointer">✕ Rechazar</button>
+          </div>
+        </div>`).join('');
+    }
+
+    if (!html) html = '<p style="color:#9ca3af;text-align:center;padding:20px">No tienes solicitudes.</p>';
+
+    panel.innerHTML = html;
     document.getElementById('notif-overlay').classList.add('open');
   }
 
