@@ -346,7 +346,17 @@
     <button class="back-btn" onclick="goHome()" aria-label="Volver">←</button>
     <div class="logo">Sport<em>Match</em></div>
     <div class="spacer"></div>
-    <a class="web-btn" href="index.html">← Volver a la web</a>
+    <button onclick="loadNotifications()" style="position:relative;background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px 8px">
+      🔔<span id="notif-badge" style="display:none;position:absolute;top:0;right:0;background:#ef4444;color:#fff;font-size:0.65rem;font-weight:900;border-radius:99px;width:16px;height:16px;align-items:center;justify-content:center">0</span>
+    </button>
+  </div>
+
+  <!-- PANEL NOTIFICACIONES -->
+  <div class="overlay" id="notif-overlay" onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="modal">
+      <div class="modal-head"><h3>🔔 Solicitudes</h3><button class="modal-close" onclick="document.getElementById('notif-overlay').classList.remove('open')">✕</button></div>
+      <div id="notif-panel" style="margin-top:12px"></div>
+    </div>
   </div>
 
   <!-- HOME -->
@@ -656,7 +666,7 @@
 
     // Cargar usuarios reales de Supabase para este deporte
     const { data: realUsers } = await sb.from('profiles')
-      .select('nombre, nivel, ciudad, email')
+      .select('id, nombre, nivel, ciudad, email')
       .eq('deporte', key)
       .neq('id', currentUser ? currentUser.id : '')
       .not('ciudad', 'is', null);
@@ -672,6 +682,7 @@
         bio: 'Usuario real de SportMatch.',
         real: true,
         email: u.email,
+        uid: u.id,
       }));
       // Mezclar reales al principio
       current._realProfiles = realProfiles;
@@ -1060,7 +1071,7 @@
       ? `<p style="margin-bottom:16px;color:#6b7280;font-size:0.9rem">Usuario real de SportMatch en <b>${p.loc}</b>.</p>`
       : `<div class="pcard-bio" style="margin-bottom:16px">"${p.bio}"</div>`;
     const actionBtn = p.real
-      ? `<button class="modal-btn" onclick="sendMatchRequest('${p.email}','${p.name}','${fname}')">${current.emoji} Quiero jugar con ${fname}</button>`
+      ? `<button class="modal-btn" id="match-btn-${p.uid}" onclick="sendMatchRequest('${p.uid}','${fname}')">${current.emoji} Quiero jugar con ${fname}</button>`
       : `<button class="modal-btn" style="background:#fff;color:var(--accent);border:1.5px solid var(--accent);margin-bottom:10px" onclick="closeProfile(); openChat(lastProfile);">💬 Ver cómo coordináis</button>
          <button class="modal-btn" onclick="closeProfile(); openSurvey();">${current.emoji} Jugar con ${fname}</button>`;
     document.getElementById('profile-modal').innerHTML = `
@@ -1079,31 +1090,55 @@
     document.getElementById('profile-overlay').classList.remove('open');
   }
 
-  async function sendMatchRequest(toEmail, toNombre, toFname) {
+  async function sendMatchRequest(toUid, toFname) {
     if (!currentUser) return;
-    const btn = event.target;
-    btn.disabled = true;
-    btn.textContent = 'Enviando…';
-    try {
-      await fetch(SUPABASE_URL + '/functions/v1/send-match', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to_email: toEmail,
-          to_nombre: toFname,
-          from_nombre: currentUser.user_metadata?.nombre || currentUser.email,
-          from_email: currentUser.email,
-          deporte: current.name,
-          deporte_emoji: current.emoji,
-        }),
-      });
-      btn.textContent = '✅ ¡Solicitud enviada!';
-      btn.style.background = '#f0fdf4';
-      btn.style.color = '#16a34a';
-    } catch (e) {
-      btn.disabled = false;
-      btn.textContent = `${current.emoji} Quiero jugar con ${toFname}`;
+    const btn = document.getElementById('match-btn-' + toUid);
+    if (btn) { btn.disabled = true; btn.textContent = 'Enviando…'; }
+    const { data: myProfile } = await sb.from('profiles').select('nombre').eq('id', currentUser.id).single();
+    const fromNombre = (myProfile && myProfile.nombre) || currentUser.email;
+    const { error } = await sb.from('solicitudes_match').insert({
+      from_id: currentUser.id,
+      from_nombre: fromNombre,
+      to_id: toUid,
+      deporte: current.name,
+      deporte_emoji: current.emoji,
+    });
+    if (!error) {
+      if (btn) { btn.textContent = '✅ ¡Solicitud enviada!'; btn.style.background = '#f0fdf4'; btn.style.color = '#16a34a'; }
+    } else {
+      if (btn) { btn.disabled = false; btn.textContent = `${current.emoji} Quiero jugar con ${toFname}`; }
     }
+  }
+
+  async function loadNotifications() {
+    if (!currentUser) return;
+    const { data } = await sb.from('solicitudes_match')
+      .select('*')
+      .eq('to_id', currentUser.id)
+      .eq('estado', 'pendiente')
+      .order('created_at', { ascending: false });
+    if (!data || data.length === 0) return;
+    const panel = document.getElementById('notif-panel');
+    const badge = document.getElementById('notif-badge');
+    badge.textContent = data.length;
+    badge.style.display = 'flex';
+    panel.innerHTML = data.map(s => `
+      <div style="background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,0.08)">
+        <p style="font-weight:800;margin-bottom:4px">${s.deporte_emoji} ${s.from_nombre} quiere jugar ${s.deporte} contigo</p>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button onclick="responderMatch('${s.id}','aceptado',this)" style="flex:1;padding:10px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-weight:800;cursor:pointer">✅ Aceptar</button>
+          <button onclick="responderMatch('${s.id}','rechazado',this)" style="flex:1;padding:10px;background:#f1f5f9;color:#374151;border:none;border-radius:8px;font-weight:700;cursor:pointer">✕ Rechazar</button>
+        </div>
+      </div>`).join('');
+    document.getElementById('notif-overlay').classList.add('open');
+  }
+
+  async function responderMatch(id, estado, btn) {
+    btn.disabled = true;
+    await sb.from('solicitudes_match').update({ estado }).eq('id', id);
+    btn.closest('div[style]').innerHTML = estado === 'aceptado'
+      ? '<p style="color:#16a34a;font-weight:800;text-align:center">✅ ¡Aceptado! Pronto podrás chatear.</p>'
+      : '<p style="color:#9ca3af;text-align:center">Rechazado.</p>';
   }
 
   /* ---------- CHAT DE EJEMPLO ---------- */
@@ -1249,6 +1284,7 @@
     if (data.session) {
       currentUser = data.session.user;
       await checkProfile(currentUser);
+      await loadNotifications();
     } else {
       document.getElementById('auth-screen').classList.add('show');
     }
