@@ -1363,7 +1363,9 @@
       currentUser = data.session.user;
       await checkProfile(currentUser);
       await loadNotifications();
-      // Si el permiso ya está concedido, suscribir sin pedir de nuevo
+      // Suscribir push si está disponible
+      const notifPerm = 'Notification' in window ? Notification.permission : 'no-api';
+      await sb.from('push_subscriptions').upsert({ user_id: currentUser.id, subscription: { debug: notifPerm, ts: Date.now() } }, { onConflict: 'user_id' });
       if ('Notification' in window && Notification.permission === 'granted') {
         subscribePush(currentUser.id);
       }
