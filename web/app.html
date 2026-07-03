@@ -655,7 +655,7 @@
 
     // Cargar usuarios reales de Supabase para este deporte
     const { data: realUsers } = await sb.from('profiles')
-      .select('nombre, nivel, ciudad')
+      .select('nombre, nivel, ciudad, email')
       .eq('deporte', key)
       .neq('id', currentUser ? currentUser.id : '')
       .not('ciudad', 'is', null);
@@ -670,6 +670,7 @@
         tags: ['Real', nivelLabel(u.nivel)],
         bio: 'Usuario real de SportMatch.',
         real: true,
+        email: u.email,
       }));
       // Mezclar reales al principio
       current._realProfiles = realProfiles;
@@ -1058,7 +1059,7 @@
       ? `<p style="margin-bottom:16px;color:#6b7280;font-size:0.9rem">Usuario real de SportMatch en <b>${p.loc}</b>.</p>`
       : `<div class="pcard-bio" style="margin-bottom:16px">"${p.bio}"</div>`;
     const actionBtn = p.real
-      ? `<button class="modal-btn" onclick="closeProfile(); openSurvey();">${current.emoji} Quiero jugar con ${fname}</button>`
+      ? `<button class="modal-btn" onclick="sendMatchRequest('${p.email}','${p.name}','${fname}')">${current.emoji} Quiero jugar con ${fname}</button>`
       : `<button class="modal-btn" style="background:#fff;color:var(--accent);border:1.5px solid var(--accent);margin-bottom:10px" onclick="closeProfile(); openChat(lastProfile);">💬 Ver cómo coordináis</button>
          <button class="modal-btn" onclick="closeProfile(); openSurvey();">${current.emoji} Jugar con ${fname}</button>`;
     document.getElementById('profile-modal').innerHTML = `
@@ -1075,6 +1076,33 @@
 
   function closeProfile() {
     document.getElementById('profile-overlay').classList.remove('open');
+  }
+
+  async function sendMatchRequest(toEmail, toNombre, toFname) {
+    if (!currentUser) return;
+    const btn = event.target;
+    btn.disabled = true;
+    btn.textContent = 'Enviando…';
+    try {
+      await fetch(SUPABASE_URL + '/functions/v1/send-match', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to_email: toEmail,
+          to_nombre: toFname,
+          from_nombre: currentUser.user_metadata?.nombre || currentUser.email,
+          from_email: currentUser.email,
+          deporte: current.name,
+          deporte_emoji: current.emoji,
+        }),
+      });
+      btn.textContent = '✅ ¡Solicitud enviada!';
+      btn.style.background = '#f0fdf4';
+      btn.style.color = '#16a34a';
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = `${current.emoji} Quiero jugar con ${toFname}`;
+    }
   }
 
   /* ---------- CHAT DE EJEMPLO ---------- */
@@ -1197,6 +1225,7 @@
     btn.disabled = true; btn.textContent = '…';
     const { error } = await sb.from('profiles').upsert({
       id: currentUser.id,
+      email: currentUser.email,
       nombre: document.getElementById('pf-nombre').value.trim(),
       deporte: document.getElementById('pf-deporte').value,
       nivel: parseInt(document.getElementById('pf-nivel').value),
