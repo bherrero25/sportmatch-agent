@@ -1363,9 +1363,6 @@
       currentUser = data.session.user;
       await checkProfile(currentUser);
       await loadNotifications();
-      // Suscribir push si está disponible
-      const notifPerm = 'Notification' in window ? Notification.permission : 'no-api';
-      await sb.from('push_subscriptions').upsert({ user_id: currentUser.id, subscription: { debug: notifPerm, ts: Date.now() } }, { onConflict: 'user_id' });
       if ('Notification' in window && Notification.permission === 'granted') {
         subscribePush(currentUser.id);
       }
@@ -1393,15 +1390,18 @@
   async function subscribePush(userId) {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
     try {
-      const reg = await navigator.serviceWorker.ready;
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') return;
-      const sub = await reg.pushManager.subscribe({
+      // Esperar a que el SW esté completamente activo antes de suscribir
+      const reg = await navigator.serviceWorker.ready;
+      await new Promise(r => setTimeout(r, 500));
+      const existingSub = await reg.pushManager.getSubscription();
+      const sub = existingSub || await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC),
       });
       await sb.from('push_subscriptions').upsert({ user_id: userId, subscription: sub.toJSON() }, { onConflict: 'user_id' });
-    } catch (e) { console.log('Push no disponible', e); }
+    } catch (e) { console.log('Push error:', e); }
   }
 
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
