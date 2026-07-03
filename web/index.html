@@ -349,7 +349,7 @@
   <div class="logo">Sport<em>Match</em></div>
   <div class="nav-right">
     <button class="btn-ghost" onclick="openModal(null)">Entrar</button>
-    <button class="btn-accent" onclick="openModal(null)">Crear perfil gratis</button>
+    <button class="btn-accent" onclick="openModal(null)">Crear perfil</button>
   </div>
 </nav>
 
@@ -359,7 +359,7 @@
     <h1>Viajas a otra ciudad.<br>Quieres jugar.<br><em>No conoces a nadie.</em></h1>
     <p>SportMatch conecta viajeros con deportistas locales compatibles — por nivel, ritmo y actitud. Golf, pádel, tenis, running. En minutos.</p>
     <div class="hero-btns">
-      <button class="hero-btn-main" onclick="openModal(null)">Crear perfil gratis →</button>
+      <button class="hero-btn-main" onclick="openModal(null)">Crear perfil →</button>
       <button class="hero-btn-sec" onclick="location.href='app.html'">Probar la app →</button>
     </div>
     <p style="margin-top:18px; font-size:0.82rem; color:var(--muted);">🟢 <strong style="color:var(--text)">Lista de espera abierta</strong> · Sé de los primeros en tu ciudad · Gratis en fase beta</p>
@@ -735,14 +735,14 @@
 <section class="cta">
   <h2>Tu próximo compañero te está esperando</h2>
   <p>Únete a la lista de espera y sé de los primeros en jugar. Gratis en fase beta.</p>
-  <button class="hero-btn-main" onclick="openModal(null)">Crear perfil gratis →</button>
+  <button class="hero-btn-main" onclick="openModal(null)">Crear perfil →</button>
 </section>
 
 <footer>SportMatch · Hecho en España 🇪🇸 · © 2026</footer>
 
 <!-- STICKY CTA MÓVIL -->
 <div class="mobile-cta">
-  <button onclick="openModal(null)">Crear perfil gratis →</button>
+  <button onclick="openModal(null)">Crear perfil →</button>
 </div>
 
 <!-- MODAL -->
@@ -773,7 +773,7 @@
           <label>Email</label>
           <input type="email" name="email" placeholder="tu@email.com" required />
         </div>
-        <button type="submit" class="modal-btn" id="modal-btn-text">Crear perfil gratis →</button>
+        <button type="submit" class="modal-btn" id="modal-btn-text">Crear perfil →</button>
         <p class="modal-fine">Te avisamos cuando SportMatch lance. Sin spam.</p>
       </form>
     </div>
@@ -815,7 +815,7 @@
     } else {
       document.getElementById('modal-title').textContent = 'Únete a la lista de espera';
       document.getElementById('modal-sub').textContent = 'Lista de espera de la beta · Solo nombre y email — 20 segundos.';
-      document.getElementById('modal-btn-text').textContent = 'Crear perfil gratis →';
+      document.getElementById('modal-btn-text').textContent = 'Crear perfil →';
       preview.style.display = 'none';
     }
     document.getElementById('modal-form-area').style.display = 'block';
