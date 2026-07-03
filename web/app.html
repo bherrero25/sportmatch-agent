@@ -1363,9 +1363,8 @@
       currentUser = data.session.user;
       await checkProfile(currentUser);
       await loadNotifications();
-      if ('Notification' in window && Notification.permission === 'granted') {
-        subscribePush(currentUser.id);
-      }
+      // Push solo se activa desde el botón en la campana (gesto del usuario)
+
     } else {
       document.getElementById('auth-screen').classList.add('show');
     }
