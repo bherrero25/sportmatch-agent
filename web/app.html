@@ -349,6 +349,42 @@
     <button onclick="loadNotifications()" style="position:relative;background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px 8px">
       🔔<span id="notif-badge" style="display:none;position:absolute;top:0;right:0;background:#ef4444;color:#fff;font-size:0.65rem;font-weight:900;border-radius:99px;width:16px;height:16px;align-items:center;justify-content:center">0</span>
     </button>
+    <button id="perfil-btn" onclick="openPerfil()" style="display:none;background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px 8px">👤</button>
+  </div>
+
+  <!-- MODAL PERFIL -->
+  <div class="overlay" id="perfil-overlay" onclick="if(event.target===this)closePerfil()">
+    <div class="modal">
+      <div class="modal-head"><h3>👤 Mi perfil</h3><button class="modal-close" onclick="closePerfil()">✕</button></div>
+      <form id="perfil-form" style="margin-top:12px;display:flex;flex-direction:column;gap:12px">
+        <input id="ep-nombre" type="text" placeholder="Tu nombre" style="padding:13px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1rem;width:100%" />
+        <select id="ep-deporte" style="padding:13px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1rem;width:100%;background:#fff;color:#111">
+          <option value="">¿Tu deporte principal?</option>
+          <option value="golf">⛳ Golf</option>
+          <option value="padel">🎾 Pádel</option>
+          <option value="tenis">🎾 Tenis</option>
+          <option value="running">🏃 Running</option>
+          <option value="senderismo">🥾 Senderismo</option>
+          <option value="esqui">⛷️ Esquí</option>
+          <option value="escalada">🧗 Escalada</option>
+          <option value="baloncesto">🏀 Baloncesto</option>
+          <option value="futbol">⚽ Fútbol</option>
+          <option value="ciclismo">🚴 Ciclismo</option>
+          <option value="surf">🏄 Surf</option>
+          <option value="submarinismo">🤿 Submarinismo</option>
+        </select>
+        <select id="ep-nivel" style="padding:13px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1rem;width:100%;background:#fff;color:#111">
+          <option value="">¿Tu nivel?</option>
+          <option value="1">Principiante</option>
+          <option value="2">Intermedio</option>
+          <option value="3">Avanzado</option>
+        </select>
+        <input id="ep-ciudad" type="text" placeholder="¿En qué ciudad estás?" style="padding:13px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1rem;width:100%" />
+        <button type="submit" style="padding:13px;background:#16a34a;color:#fff;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer">Guardar cambios</button>
+        <p id="ep-msg" style="font-size:0.85rem;text-align:center;min-height:18px;color:#16a34a"></p>
+      </form>
+      <button onclick="cerrarSesion()" style="width:100%;margin-top:8px;padding:13px;background:#f1f5f9;color:#ef4444;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer">Cerrar sesión</button>
+    </div>
   </div>
 
   <!-- PANEL NOTIFICACIONES -->
@@ -1376,7 +1412,9 @@
       if (error) { msg.textContent = 'Email o contraseña incorrectos'; btn.disabled = false; btn.textContent = 'Entrar →'; return; }
       currentUser = data.user;
       document.getElementById('auth-screen').classList.remove('show');
+      document.getElementById('perfil-btn').style.display = 'inline-block';
       await checkProfile(currentUser);
+      await loadNotifications();
     }
   });
 
@@ -1397,6 +1435,48 @@
     document.getElementById('profile-setup').classList.remove('show');
   });
 
+  async function openPerfil() {
+    if (!currentUser) return;
+    const { data } = await sb.from('profiles').select('nombre,deporte,nivel,ciudad').eq('id', currentUser.id).single();
+    if (data) {
+      document.getElementById('ep-nombre').value = data.nombre || '';
+      document.getElementById('ep-deporte').value = data.deporte || '';
+      document.getElementById('ep-nivel').value = data.nivel || '';
+      document.getElementById('ep-ciudad').value = data.ciudad || '';
+    }
+    document.getElementById('ep-msg').textContent = '';
+    document.getElementById('perfil-overlay').classList.add('open');
+  }
+
+  function closePerfil() {
+    document.getElementById('perfil-overlay').classList.remove('open');
+  }
+
+  document.getElementById('perfil-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type=submit]');
+    const msg = document.getElementById('ep-msg');
+    btn.disabled = true; btn.textContent = 'Guardando…';
+    const { error } = await sb.from('profiles').update({
+      nombre: document.getElementById('ep-nombre').value.trim(),
+      deporte: document.getElementById('ep-deporte').value,
+      nivel: parseInt(document.getElementById('ep-nivel').value) || null,
+      ciudad: document.getElementById('ep-ciudad').value.trim(),
+    }).eq('id', currentUser.id);
+    btn.disabled = false; btn.textContent = 'Guardar cambios';
+    if (error) { msg.style.color = '#ef4444'; msg.textContent = 'Error al guardar.'; return; }
+    msg.style.color = '#16a34a'; msg.textContent = '✅ Perfil actualizado';
+    setTimeout(closePerfil, 1200);
+  });
+
+  async function cerrarSesion() {
+    await sb.auth.signOut();
+    currentUser = null;
+    document.getElementById('perfil-overlay').classList.remove('open');
+    document.getElementById('perfil-btn').style.display = 'none';
+    document.getElementById('auth-screen').classList.add('show');
+  }
+
   async function checkProfile(user) {
     const { data } = await sb.from('profiles').select('nombre,deporte,nivel,ciudad').eq('id', user.id).single();
     if (!data || !data.deporte || !data.ciudad) {
@@ -1409,10 +1489,9 @@
     const { data } = await sb.auth.getSession();
     if (data.session) {
       currentUser = data.session.user;
+      document.getElementById('perfil-btn').style.display = 'inline-block';
       await checkProfile(currentUser);
       await loadNotifications();
-      // Push solo se activa desde el botón en la campana (gesto del usuario)
-
     } else {
       document.getElementById('auth-screen').classList.add('show');
     }
