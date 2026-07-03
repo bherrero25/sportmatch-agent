@@ -1363,7 +1363,10 @@
       currentUser = data.session.user;
       await checkProfile(currentUser);
       await loadNotifications();
-      subscribePush(currentUser.id);
+      // Si el permiso ya está concedido, suscribir sin pedir de nuevo
+      if ('Notification' in window && Notification.permission === 'granted') {
+        subscribePush(currentUser.id);
+      }
     } else {
       document.getElementById('auth-screen').classList.add('show');
     }
