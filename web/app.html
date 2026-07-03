@@ -1112,6 +1112,7 @@
       from_id: currentUser.id,
       from_nombre: fromNombre,
       to_id: toUid,
+      to_nombre: toFname,
       deporte: current.name,
       deporte_emoji: current.emoji,
     });
@@ -1159,7 +1160,7 @@
       html += aceptadas.map(s => `
         <div style="background:#f0fdf4;border-radius:12px;padding:14px 16px;margin-bottom:10px;border:1.5px solid #bbf7d0">
           <p style="font-weight:800;color:#16a34a">${s.deporte_emoji} ¡Match!</p>
-          <p style="margin-top:4px;color:#111">Tu solicitud para ${verbDeporte(s.deporte)} fue <b>aceptada</b>. Pronto podréis chatear.</p>
+          <p style="margin-top:4px;color:#111"><b>${s.to_nombre || 'Tu compañero'}</b> aceptó ${verbDeporte(s.deporte)} contigo. Pronto podréis chatear.</p>
         </div>`).join('');
     }
 
