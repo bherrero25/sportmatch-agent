@@ -505,9 +505,26 @@
   <div class="modal" id="profile-modal"></div>
 </div>
 
-<!-- CHAT DE EJEMPLO -->
+<!-- CHAT REAL -->
 <div class="overlay" id="chat-overlay" onclick="if(event.target===this)closeChat()">
   <div id="chat-modal"></div>
+</div>
+
+<!-- VALORAR PARTIDA -->
+<div class="overlay" id="valorar-overlay" onclick="if(event.target===this)this.classList.remove('open')" data-estrellas="0">
+  <div class="modal" style="padding:24px;text-align:center">
+    <h3 style="margin-bottom:4px">⭐ Valorar partida</h3>
+    <p style="color:#6b7280;font-size:0.9rem;margin-bottom:20px">¿Cómo fue jugar con <span id="val-nombre"></span>?</p>
+    <div style="display:flex;justify-content:center;gap:12px;margin-bottom:20px">
+      <button class="estrella-btn" onclick="seleccionarEstrella(1)" style="background:none;border:none;font-size:2.2rem;cursor:pointer;opacity:0.3;transition:all 0.15s">⭐</button>
+      <button class="estrella-btn" onclick="seleccionarEstrella(2)" style="background:none;border:none;font-size:2.2rem;cursor:pointer;opacity:0.3;transition:all 0.15s">⭐</button>
+      <button class="estrella-btn" onclick="seleccionarEstrella(3)" style="background:none;border:none;font-size:2.2rem;cursor:pointer;opacity:0.3;transition:all 0.15s">⭐</button>
+      <button class="estrella-btn" onclick="seleccionarEstrella(4)" style="background:none;border:none;font-size:2.2rem;cursor:pointer;opacity:0.3;transition:all 0.15s">⭐</button>
+      <button class="estrella-btn" onclick="seleccionarEstrella(5)" style="background:none;border:none;font-size:2.2rem;cursor:pointer;opacity:0.3;transition:all 0.15s">⭐</button>
+    </div>
+    <textarea id="val-comentario" placeholder="Comentario opcional…" style="width:100%;border:1.5px solid #e2e8f0;border-radius:10px;padding:12px;font-size:0.95rem;resize:none;height:80px;outline:none;margin-bottom:14px"></textarea>
+    <button id="val-btn" onclick="guardarValoracion()" style="width:100%;padding:13px;background:#16a34a;color:#fff;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer">Guardar valoración</button>
+  </div>
 </div>
 
 <!-- El envío del formulario lo gestiona Supabase vía JavaScript -->
@@ -713,6 +730,18 @@
       .not('ciudad', 'is', null);
 
     if (realUsers && realUsers.length > 0) {
+      // Cargar medias de valoraciones para estos usuarios
+      const userIds = realUsers.map(u => u.id);
+      const { data: vals } = await sb.from('valoraciones').select('to_id,estrellas').in('to_id', userIds);
+      const mediasPorId = {};
+      if (vals) {
+        const grupos = {};
+        vals.forEach(v => { if (!grupos[v.to_id]) grupos[v.to_id] = []; grupos[v.to_id].push(v.estrellas); });
+        Object.entries(grupos).forEach(([id, arr]) => {
+          mediasPorId[id] = (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1);
+        });
+      }
+
       const realProfiles = realUsers.map(u => ({
         name: u.nombre || 'Deportista',
         age: null,
@@ -725,6 +754,7 @@
         email: u.email,
         uid: u.id,
         avatar: u.avatar_url || null,
+        rating: mediasPorId[u.id] || null,
       }));
       // Mezclar reales al principio
       current._realProfiles = realProfiles;
@@ -804,7 +834,7 @@
       <span class="sport-badge2">${current.emoji} ${current.name}</span>
       <span class="compat">${compat}% match</span>
       <div class="feed-info">
-        <div class="feed-name">${p.name} · ${p.age}</div>
+        <div class="feed-name">${p.name}${p.rating ? ` · ⭐ ${p.rating}` : ''}</div>
         <div class="feed-loc">📍 ${p.loc}</div>
         <div class="feed-tags">${tags}</div>
         <div class="feed-bio">"${p.bio}"</div>
@@ -1269,7 +1299,7 @@
               <p style="color:#374151;font-size:0.85rem;margin:0">${s.deporte_emoji} ${s.deporte}</p>
             </div>
           </div>
-          <button onclick="document.getElementById('notif-overlay').classList.remove('open'); openChat('${s.id}','${otroNombre.replace(/'/g,"\\'")}','${otroAvatar}');" style="${btnStyle}">${btnLabel}</button>
+          <button onclick="document.getElementById('notif-overlay').classList.remove('open'); openChat('${s.id}','${otroNombre.replace(/'/g,"\\'")}','${otroAvatar}','${otroId}');" style="${btnStyle}">${btnLabel}</button>
         </div>`;
       }).join('');
     }
@@ -1308,11 +1338,30 @@
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
-  async function openChat(matchId, otherNombre, otherAvatar) {
+  let chatOtherNombre = null;
+  let chatOtherAvatar = null;
+  let chatToId = null;
+
+  async function openChat(matchId, otherNombre, otherAvatar, otherUserId) {
     chatMatchId = matchId;
+    chatOtherNombre = otherNombre;
+    chatOtherAvatar = otherAvatar || null;
+    chatToId = otherUserId || null;
     const avatarHtml = otherAvatar
       ? `<img src="${otherAvatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />`
       : escapeHtml(otherNombre.charAt(0).toUpperCase());
+
+    // Comprobar si ya valoré este match
+    const { data: yaValorado } = await sb.from('valoraciones')
+      .select('id,estrellas')
+      .eq('match_id', matchId)
+      .eq('from_id', currentUser.id)
+      .maybeSingle();
+
+    const valorarBtn = yaValorado
+      ? `<button disabled style="background:#f1f5f9;color:#9ca3af;border:none;border-radius:10px;padding:10px 14px;font-size:0.9rem;cursor:default">⭐ ${yaValorado.estrellas}/5</button>`
+      : `<button onclick="abrirValorar()" style="background:#fef9c3;color:#854d0e;border:1.5px solid #fde047;border-radius:10px;padding:10px 14px;font-size:0.9rem;font-weight:700;cursor:pointer">⭐ Valorar</button>`;
+
     document.getElementById('chat-modal').innerHTML = `
       <div class="chat-head">
         <div class="chat-avatar">${avatarHtml}</div>
@@ -1321,6 +1370,7 @@
       </div>
       <div class="chat-body" id="chat-body"><p style="text-align:center;color:#9ca3af;padding:20px;font-size:0.9rem">Cargando…</p></div>
       <div style="display:flex;gap:8px;padding:12px;border-top:1px solid #e2e8f0">
+        ${valorarBtn}
         <input id="chat-input" type="text" placeholder="Escribe un mensaje…"
           style="flex:1;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 14px;font-size:0.95rem;outline:none"
           onkeydown="if(event.key==='Enter')sendMessage()"/>
@@ -1330,6 +1380,50 @@
     await loadMessages();
     clearInterval(chatPollInterval);
     chatPollInterval = setInterval(loadMessages, 3000);
+  }
+
+  function abrirValorar() {
+    document.getElementById('val-nombre').textContent = chatOtherNombre || '';
+    document.getElementById('val-comentario').value = '';
+    document.getElementById('val-btn').disabled = false;
+    document.getElementById('val-btn').textContent = 'Guardar valoración';
+    document.getElementById('valorar-overlay').classList.add('open');
+    seleccionarEstrella(0);
+  }
+
+  function seleccionarEstrella(n) {
+    document.querySelectorAll('.estrella-btn').forEach((btn, i) => {
+      btn.style.opacity = i < n ? '1' : '0.3';
+      btn.style.transform = i < n ? 'scale(1.15)' : 'scale(1)';
+    });
+    document.getElementById('valorar-overlay').dataset.estrellas = n;
+  }
+
+  async function guardarValoracion() {
+    const estrellas = parseInt(document.getElementById('valorar-overlay').dataset.estrellas);
+    if (!estrellas) { alert('Elige cuántas estrellas'); return; }
+    const comentario = document.getElementById('val-comentario').value.trim();
+    const btn = document.getElementById('val-btn');
+    btn.disabled = true; btn.textContent = 'Guardando…';
+
+    // Obtener to_id desde la solicitud_match si no lo tenemos
+    let toId = chatToId;
+    if (!toId) {
+      const { data: match } = await sb.from('solicitudes_match').select('from_id,to_id').eq('id', chatMatchId).single();
+      toId = match.from_id === currentUser.id ? match.to_id : match.from_id;
+    }
+
+    await sb.from('valoraciones').insert({
+      match_id: chatMatchId,
+      from_id: currentUser.id,
+      to_id: toId,
+      estrellas,
+      comentario: comentario || null,
+    });
+
+    document.getElementById('valorar-overlay').classList.remove('open');
+    // Reabrir chat con botón actualizado
+    openChat(chatMatchId, chatOtherNombre, chatOtherAvatar, toId);
   }
 
   async function loadMessages() {
