@@ -357,6 +357,11 @@
     <div class="modal">
       <div class="modal-head"><h3>👤 Mi perfil</h3><button class="modal-close" onclick="closePerfil()">✕</button></div>
       <form id="perfil-form" style="margin-top:12px;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+          <div id="ep-avatar-preview" style="width:80px;height:80px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;color:#9ca3af;overflow:hidden;cursor:pointer" onclick="document.getElementById('ep-foto').click()">📷</div>
+          <label style="font-size:0.85rem;color:#6b7280;cursor:pointer" onclick="document.getElementById('ep-foto').click()">Toca para añadir foto</label>
+          <input id="ep-foto" type="file" accept="image/*" style="display:none" onchange="previewAvatar(this)" />
+        </div>
         <input id="ep-nombre" type="text" placeholder="Tu nombre" style="padding:13px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1rem;width:100%" />
         <select id="ep-deporte" style="padding:13px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1rem;width:100%;background:#fff;color:#111">
           <option value="">¿Tu deporte principal?</option>
@@ -702,7 +707,7 @@
 
     // Cargar usuarios reales de Supabase para este deporte
     const { data: realUsers } = await sb.from('profiles')
-      .select('id, nombre, nivel, ciudad, email')
+      .select('id, nombre, nivel, ciudad, email, avatar_url')
       .eq('deporte', key)
       .neq('id', currentUser ? currentUser.id : '')
       .not('ciudad', 'is', null);
@@ -719,6 +724,7 @@
         real: true,
         email: u.email,
         uid: u.id,
+        avatar: u.avatar_url || null,
       }));
       // Mezclar reales al principio
       current._realProfiles = realProfiles;
@@ -789,8 +795,8 @@
   function feedCardHTML(p, i) {
     const compat = 80 + (hashStr(p.name + current.key) % 18);
     const tags = p.tags.map((t, k) => `<span class="tag ${k === 0 ? 'tag-green' : ''}">${t}</span>`).join('');
-    const media = p.img
-      ? `<img class="feed-img" src="${p.img}" alt="${current.name}" />`
+    const media = (p.img || p.avatar)
+      ? `<img class="feed-img" src="${p.img || p.avatar}" alt="${p.name}" />`
       : `<div class="feed-fallback">${p.name.charAt(0)}</div>`;
     return `<div class="feed-card">
       ${media}
@@ -1234,20 +1240,36 @@
     let html = '';
 
     if (matches.length > 0) {
+      // Buscar avatares de los otros usuarios
+      const otrosIds = matches.map(s => s.from_id === currentUser.id ? s.to_id : s.from_id);
+      const { data: otrosPerfiles } = await sb.from('profiles').select('id,avatar_url').in('id', otrosIds);
+      const avatarPorId = {};
+      (otrosPerfiles || []).forEach(p => { avatarPorId[p.id] = p.avatar_url; });
+
       html += '<p style="font-size:0.8rem;font-weight:800;color:#16a34a;margin-bottom:8px">💬 MIS MATCHES</p>';
       html += matches.map(s => {
         const esEnviado = s.from_id === currentUser.id;
+        const otroId = esEnviado ? s.to_id : s.from_id;
         const otroNombre = esEnviado ? (s.to_nombre || 'Tu compañero') : s.from_nombre;
+        const otroAvatar = avatarPorId[otroId] || '';
         const nuevos = noLeidosPorMatch[s.id] || 0;
         const btnLabel = nuevos > 0 ? `💬 ${nuevos} mensaje${nuevos > 1 ? 's' : ''} nuevo${nuevos > 1 ? 's' : ''}` : '💬 Chatear';
         const btnStyle = nuevos > 0
           ? 'width:100%;padding:10px;background:#15803d;color:#fff;border:none;border-radius:8px;font-weight:800;cursor:pointer;box-shadow:0 0 0 3px #bbf7d0'
           : 'width:100%;padding:10px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-weight:800;cursor:pointer';
+        const avatarHtml = otroAvatar
+          ? `<img src="${otroAvatar}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0" />`
+          : `<div style="width:44px;height:44px;border-radius:50%;background:#16a34a;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.2rem;flex-shrink:0">${escapeHtml(otroNombre.charAt(0).toUpperCase())}</div>`;
         return `
         <div style="background:#f0fdf4;border-radius:12px;padding:14px 16px;margin-bottom:10px;border:1.5px solid #bbf7d0">
-          <p style="font-weight:800;color:#16a34a;margin-bottom:4px">${s.deporte_emoji} ${escapeHtml(otroNombre)}</p>
-          <p style="color:#374151;font-size:0.9rem;margin-bottom:10px">${s.deporte} · ¡Match confirmado!</p>
-          <button onclick="document.getElementById('notif-overlay').classList.remove('open'); openChat('${s.id}','${otroNombre.replace(/'/g,"\\'")}');" style="${btnStyle}">${btnLabel}</button>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+            ${avatarHtml}
+            <div>
+              <p style="font-weight:800;color:#16a34a;margin:0">${escapeHtml(otroNombre)}</p>
+              <p style="color:#374151;font-size:0.85rem;margin:0">${s.deporte_emoji} ${s.deporte}</p>
+            </div>
+          </div>
+          <button onclick="document.getElementById('notif-overlay').classList.remove('open'); openChat('${s.id}','${otroNombre.replace(/'/g,"\\'")}','${otroAvatar}');" style="${btnStyle}">${btnLabel}</button>
         </div>`;
       }).join('');
     }
@@ -1286,11 +1308,14 @@
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
-  async function openChat(matchId, otherNombre) {
+  async function openChat(matchId, otherNombre, otherAvatar) {
     chatMatchId = matchId;
+    const avatarHtml = otherAvatar
+      ? `<img src="${otherAvatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />`
+      : escapeHtml(otherNombre.charAt(0).toUpperCase());
     document.getElementById('chat-modal').innerHTML = `
       <div class="chat-head">
-        <div class="chat-avatar">${escapeHtml(otherNombre.charAt(0).toUpperCase())}</div>
+        <div class="chat-avatar">${avatarHtml}</div>
         <div><div class="chat-name">${escapeHtml(otherNombre)}</div><div class="chat-status">SportMatch</div></div>
         <button class="modal-close" style="margin-left:auto" onclick="closeChat()">✕</button>
       </div>
@@ -1435,14 +1460,31 @@
     document.getElementById('profile-setup').classList.remove('show');
   });
 
+  function previewAvatar(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const preview = document.getElementById('ep-avatar-preview');
+      preview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover" />`;
+    };
+    reader.readAsDataURL(file);
+  }
+
   async function openPerfil() {
     if (!currentUser) return;
-    const { data } = await sb.from('profiles').select('nombre,deporte,nivel,ciudad').eq('id', currentUser.id).single();
+    const { data } = await sb.from('profiles').select('nombre,deporte,nivel,ciudad,avatar_url').eq('id', currentUser.id).single();
     if (data) {
       document.getElementById('ep-nombre').value = data.nombre || '';
       document.getElementById('ep-deporte').value = data.deporte || '';
       document.getElementById('ep-nivel').value = data.nivel || '';
       document.getElementById('ep-ciudad').value = data.ciudad || '';
+      const preview = document.getElementById('ep-avatar-preview');
+      if (data.avatar_url) {
+        preview.innerHTML = `<img src="${data.avatar_url}" style="width:100%;height:100%;object-fit:cover" />`;
+      } else {
+        preview.innerHTML = '📷';
+      }
     }
     document.getElementById('ep-msg').textContent = '';
     document.getElementById('perfil-overlay').classList.add('open');
@@ -1457,12 +1499,29 @@
     const btn = e.target.querySelector('button[type=submit]');
     const msg = document.getElementById('ep-msg');
     btn.disabled = true; btn.textContent = 'Guardando…';
-    const { error } = await sb.from('profiles').update({
+
+    let avatar_url = null;
+    const fotoInput = document.getElementById('ep-foto');
+    if (fotoInput.files[0]) {
+      const file = fotoInput.files[0];
+      const ext = file.name.split('.').pop();
+      const path = `${currentUser.id}.${ext}`;
+      const { error: upErr } = await sb.storage.from('avatars').upload(path, file, { upsert: true });
+      if (!upErr) {
+        const { data: urlData } = sb.storage.from('avatars').getPublicUrl(path);
+        avatar_url = urlData.publicUrl + '?t=' + Date.now();
+      }
+    }
+
+    const updates = {
       nombre: document.getElementById('ep-nombre').value.trim(),
       deporte: document.getElementById('ep-deporte').value,
       nivel: parseInt(document.getElementById('ep-nivel').value) || null,
       ciudad: document.getElementById('ep-ciudad').value.trim(),
-    }).eq('id', currentUser.id);
+    };
+    if (avatar_url) updates.avatar_url = avatar_url;
+
+    const { error } = await sb.from('profiles').update(updates).eq('id', currentUser.id);
     btn.disabled = false; btn.textContent = 'Guardar cambios';
     if (error) { msg.style.color = '#ef4444'; msg.textContent = 'Error al guardar.'; return; }
     msg.style.color = '#16a34a'; msg.textContent = '✅ Perfil actualizado';
