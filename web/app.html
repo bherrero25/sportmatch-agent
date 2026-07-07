@@ -450,6 +450,15 @@
 
     <div class="result-count" id="result-count"></div>
     <div class="feed" id="feed"></div>
+
+    <!-- PARTIDAS -->
+    <div style="padding:16px 18px 0">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="font-size:0.8rem;font-weight:800;color:#374151;text-transform:uppercase;letter-spacing:0.05em">🏟️ Partidas abiertas</div>
+        <button onclick="abrirProponerPartida()" style="background:#16a34a;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:0.85rem;font-weight:800;cursor:pointer">+ Proponer</button>
+      </div>
+      <div id="partidas-list"></div>
+    </div>
   </div>
 
   <footer>
@@ -508,6 +517,30 @@
 <!-- CHAT REAL -->
 <div class="overlay" id="chat-overlay" onclick="if(event.target===this)closeChat()">
   <div id="chat-modal"></div>
+</div>
+
+<!-- PROPONER PARTIDA -->
+<div class="overlay" id="proponer-overlay" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <div class="modal-head"><h3>🏟️ Proponer partida</h3><button class="modal-close" onclick="document.getElementById('proponer-overlay').classList.remove('open')">✕</button></div>
+    <form id="proponer-form" style="margin-top:12px;display:flex;flex-direction:column;gap:12px">
+      <input id="pp-ciudad" type="text" placeholder="Ciudad" required style="padding:13px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1rem;width:100%" />
+      <div style="display:flex;gap:8px">
+        <input id="pp-fecha" type="date" required style="flex:1;padding:13px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1rem" />
+        <input id="pp-hora" type="time" required style="flex:1;padding:13px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1rem" />
+      </div>
+      <select id="pp-plazas" required style="padding:13px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1rem;width:100%;background:#fff;color:#111">
+        <option value="">¿Cuántos buscas?</option>
+        <option value="1">1 persona más</option>
+        <option value="2">2 personas más</option>
+        <option value="3">3 personas más</option>
+        <option value="4">4 personas más</option>
+      </select>
+      <textarea id="pp-descripcion" placeholder="Descripción opcional (lugar exacto, nivel buscado…)" style="padding:13px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1rem;width:100%;height:80px;resize:none;outline:none"></textarea>
+      <button type="submit" id="pp-btn" style="padding:13px;background:#16a34a;color:#fff;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer">Publicar partida</button>
+      <p id="pp-msg" style="font-size:0.85rem;text-align:center;min-height:18px;color:#ef4444"></p>
+    </form>
+  </div>
 </div>
 
 <!-- VALORAR PARTIDA -->
@@ -762,6 +795,7 @@
       current._realProfiles = [];
     }
     renderCards();
+    loadPartidas(current.name);
   }
 
   function nivelLabel(n) {
@@ -1684,6 +1718,135 @@
   }
 
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+
+  /* ---------- PARTIDAS ---------- */
+  function abrirProponerPartida() {
+    if (!currentUser) return;
+    document.getElementById('pp-ciudad').value = '';
+    document.getElementById('pp-fecha').value = '';
+    document.getElementById('pp-hora').value = '';
+    document.getElementById('pp-plazas').value = '';
+    document.getElementById('pp-descripcion').value = '';
+    document.getElementById('pp-msg').textContent = '';
+    document.getElementById('pp-btn').disabled = false;
+    document.getElementById('pp-btn').textContent = 'Publicar partida';
+    document.getElementById('proponer-overlay').classList.add('open');
+  }
+
+  document.getElementById('proponer-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    if (!currentUser) return;
+    const btn = document.getElementById('pp-btn');
+    const msg = document.getElementById('pp-msg');
+    btn.disabled = true; btn.textContent = 'Publicando…';
+
+    const { data: perfil } = await sb.from('profiles').select('nombre').eq('id', currentUser.id).single();
+    const { error } = await sb.from('partidas').insert({
+      creador_id: currentUser.id,
+      creador_nombre: perfil?.nombre || currentUser.email,
+      deporte: current.name,
+      deporte_emoji: current.emoji,
+      ciudad: document.getElementById('pp-ciudad').value.trim(),
+      fecha: document.getElementById('pp-fecha').value,
+      hora: document.getElementById('pp-hora').value,
+      plazas: parseInt(document.getElementById('pp-plazas').value),
+      descripcion: document.getElementById('pp-descripcion').value.trim() || null,
+    });
+
+    if (error) { msg.textContent = 'Error al publicar.'; btn.disabled = false; btn.textContent = 'Publicar partida'; return; }
+    document.getElementById('proponer-overlay').classList.remove('open');
+    await loadPartidas(current.name);
+  });
+
+  async function loadPartidas(deporte) {
+    const el = document.getElementById('partidas-list');
+    if (!el) return;
+
+    const hoy = new Date().toISOString().split('T')[0];
+    const { data: partidas } = await sb.from('partidas')
+      .select('*')
+      .eq('deporte', deporte)
+      .gte('fecha', hoy)
+      .order('fecha', { ascending: true })
+      .order('hora', { ascending: true })
+      .limit(10);
+
+    if (!partidas || partidas.length === 0) {
+      el.innerHTML = '<p style="color:#9ca3af;font-size:0.9rem;text-align:center;padding:16px 0">No hay partidas abiertas. ¡Propón la primera!</p>';
+      return;
+    }
+
+    // Cargar apuntados para cada partida
+    const ids = partidas.map(p => p.id);
+    const { data: apuntados } = await sb.from('partida_apuntados').select('partida_id,user_id,user_nombre').in('partida_id', ids);
+    const apuntadosPor = {};
+    (apuntados || []).forEach(a => {
+      if (!apuntadosPor[a.partida_id]) apuntadosPor[a.partida_id] = [];
+      apuntadosPor[a.partida_id].push(a);
+    });
+
+    el.innerHTML = partidas.map(p => {
+      const lista = apuntadosPor[p.id] || [];
+      const yoApuntado = currentUser && lista.some(a => a.user_id === currentUser.id);
+      const esMio = currentUser && p.creador_id === currentUser.id;
+      const lleno = lista.length >= p.plazas;
+      const fecha = new Date(p.fecha + 'T12:00:00').toLocaleDateString('es-ES', { weekday:'short', day:'numeric', month:'short' });
+      const hora = p.hora.slice(0,5);
+      const nombres = [p.creador_nombre, ...lista.map(a => a.user_nombre)].join(', ');
+
+      let btnHtml = '';
+      if (esMio) {
+        btnHtml = `<span style="font-size:0.8rem;color:#16a34a;font-weight:700">✅ Tu partida</span>`;
+      } else if (yoApuntado) {
+        btnHtml = `<button onclick="desapuntarsePartida('${p.id}')" style="padding:8px 14px;background:#f1f5f9;color:#374151;border:none;border-radius:8px;font-size:0.85rem;font-weight:700;cursor:pointer">✕ Desapuntarse</button>`;
+      } else if (lleno) {
+        btnHtml = `<span style="font-size:0.8rem;color:#9ca3af;font-weight:700">Completo</span>`;
+      } else {
+        btnHtml = `<button onclick="apuntarsePartida('${p.id}')" style="padding:8px 14px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer">Apuntarme</button>`;
+      }
+
+      return `
+      <div style="background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,0.07);border:1.5px solid #e2e8f0">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+          <div>
+            <p style="font-weight:800;font-size:1rem;margin:0">${p.deporte_emoji} ${p.ciudad}</p>
+            <p style="color:#6b7280;font-size:0.85rem;margin:2px 0 0">📅 ${fecha} · ⏰ ${hora}</p>
+          </div>
+          <span style="background:#f0fdf4;color:#16a34a;font-size:0.8rem;font-weight:800;padding:4px 10px;border-radius:99px">${lista.length + 1}/${p.plazas + 1}</span>
+        </div>
+        ${p.descripcion ? `<p style="color:#374151;font-size:0.88rem;margin:6px 0">${escapeHtml(p.descripcion)}</p>` : ''}
+        <p style="color:#9ca3af;font-size:0.8rem;margin:6px 0 10px">👥 ${escapeHtml(nombres)}</p>
+        <div style="display:flex;justify-content:flex-end">${btnHtml}</div>
+      </div>`;
+    }).join('');
+  }
+
+  async function apuntarsePartida(partidaId) {
+    if (!currentUser) return;
+    const { data: perfil } = await sb.from('profiles').select('nombre').eq('id', currentUser.id).single();
+    await sb.from('partida_apuntados').insert({
+      partida_id: partidaId,
+      user_id: currentUser.id,
+      user_nombre: perfil?.nombre || currentUser.email,
+    });
+    // Notificar al creador
+    const { data: partida } = await sb.from('partidas').select('creador_id,deporte,deporte_emoji,ciudad,fecha').eq('id', partidaId).single();
+    if (partida && partida.creador_id !== currentUser.id) {
+      sb.functions.invoke('send-match', { body: {
+        to_user_id: partida.creador_id,
+        from_nombre: perfil?.nombre || 'Alguien',
+        deporte: partida.deporte,
+        deporte_emoji: partida.deporte_emoji,
+      }}).catch(() => {});
+    }
+    await loadPartidas(current.name);
+  }
+
+  async function desapuntarsePartida(partidaId) {
+    if (!currentUser) return;
+    await sb.from('partida_apuntados').delete().eq('partida_id', partidaId).eq('user_id', currentUser.id);
+    await loadPartidas(current.name);
+  }
 </script>
 
 </body>
