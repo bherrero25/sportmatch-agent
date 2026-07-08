@@ -489,7 +489,7 @@
   </div>
 
   <footer>
-    SportMatch · Beta v19 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
+    SportMatch · Beta v20 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
   </footer>
 </div>
 
@@ -1575,6 +1575,14 @@
 
     if (!html) html = `<p style="color:#9ca3af;text-align:center;padding:20px">${t('notif.empty')}</p>`;
 
+    // Botón para activar push si OneSignal está configurado y aún no hay permiso
+    if (ONESIGNAL_APP_ID && 'Notification' in window && Notification.permission !== 'granted') {
+      html += `<div style="margin-top:16px;padding:14px;background:#f8fafc;border-radius:12px;border:1.5px dashed #e2e8f0;text-align:center">
+        <p style="font-size:0.85rem;color:#6b7280;margin-bottom:10px">${t('notif.push_hint')}</p>
+        <button onclick="activarNotificaciones()" style="background:#16a34a;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-weight:800;cursor:pointer">${t('notif.push_btn')}</button>
+      </div>`;
+    }
+
     panel.innerHTML = html;
     // Solo abrir el panel si se pidió explícitamente (tocar la campana)
     if (openPanel) {
@@ -1830,6 +1838,15 @@
       texto,
     });
     await loadMessages();
+
+    // Push al destinatario
+    if (chatToId) {
+      fetch(SUPABASE_URL + '/functions/v1/send-push', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to_user_id: chatToId, title: `💬 ${miNombre}`, body: texto }),
+      }).catch(() => {});
+    }
   }
 
   /* ---------- POPUP DE MENSAJE NUEVO ---------- */
@@ -1923,6 +1940,7 @@
       'notif.accept':'✅ Aceptar','notif.reject':'✕ Rechazar','notif.chat':'💬 Chatear',
       'notif.new_msg':'mensaje nuevo','notif.new_msgs':'mensajes nuevos','notif.empty':'No tienes solicitudes.',
       'notif.partidas':'🏟️ NUEVOS EN TUS PARTIDAS','notif.apuntado':'se apuntó a tu partida de','notif.en':'en',
+    'notif.push_hint':'Activa las notificaciones para enterarte al momento cuando alguien quiera jugar contigo','notif.push_btn':'🔔 Activar notificaciones',
       'match.profile':'👤 Perfil','match.confirmed':'¡Match confirmado!',
       'chats.empty':'Aún no tienes chats. ¡Haz un match!',
     'chat.placeholder':'Escribe un mensaje…','chat.say_hi':'¡Di hola! 👋','chat.rate':'⭐ Valorar',
@@ -1972,6 +1990,7 @@
       'notif.accept':'✅ Accept','notif.reject':'✕ Decline','notif.chat':'💬 Chat',
       'notif.new_msg':'new message','notif.new_msgs':'new messages','notif.empty':'No requests yet.',
       'notif.partidas':'🏟️ NEW IN YOUR GAMES','notif.apuntado':'joined your game of','notif.en':'in',
+    'notif.push_hint':'Turn on notifications to know right away when someone wants to play with you','notif.push_btn':'🔔 Enable notifications',
       'match.profile':'👤 Profile','match.confirmed':'Match confirmed!',
       'chats.empty':'No chats yet. Make a match!',
     'chat.placeholder':'Write a message…','chat.say_hi':'Say hi! 👋','chat.rate':'⭐ Rate',
@@ -2173,6 +2192,10 @@
         checkProfile(currentUser);
         loadNotifications();
         startMsgPolling();
+        if (ONESIGNAL_APP_ID) {
+          window.OneSignalDeferred = window.OneSignalDeferred || [];
+          OneSignalDeferred.push(OneSignal => OneSignal.login(currentUser.id));
+        }
       }
     } catch (err) {
       msg.textContent = 'Error: ' + (err.message || err);
@@ -2299,37 +2322,34 @@
     renderHome();
     applyLang();
   })();
-  const VAPID_PUBLIC = 'BBjkw6FzxpbslBpR0K3c-TJBqqsMmO_KoP-WLUwoyiJMD1vJPyfHYGXdkLPtChfZrxQHO9vMYG8yyHvswn_5Gro';
+  /* ---------- PUSH con OneSignal ---------- */
+  const ONESIGNAL_APP_ID = ''; // ← pendiente: App ID de OneSignal
 
-  function urlBase64ToUint8Array(base64String) {
-    const padding = '='.repeat((4 - base64String.length % 4) % 4);
-    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-    const rawData = atob(base64);
-    return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+  if (ONESIGNAL_APP_ID) {
+    const osScript = document.createElement('script');
+    osScript.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js';
+    osScript.defer = true;
+    document.head.appendChild(osScript);
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async (OneSignal) => {
+      await OneSignal.init({
+        appId: ONESIGNAL_APP_ID,
+        serviceWorkerPath: 'sw.js',
+        serviceWorkerParam: { scope: '/' },
+        autoRegister: false,
+      });
+      if (currentUser) OneSignal.login(currentUser.id);
+    });
   }
 
   async function activarNotificaciones() {
-    if (!currentUser) return;
-    await subscribePush(currentUser.id);
+    if (!currentUser || !ONESIGNAL_APP_ID) return;
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async (OneSignal) => {
+      await OneSignal.login(currentUser.id);
+      await OneSignal.Notifications.requestPermission();
+    });
     document.getElementById('notif-overlay').classList.remove('open');
-    setTimeout(() => loadNotifications(), 500);
-  }
-
-  async function subscribePush(userId) {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
-    try {
-      const permission = await Notification.requestPermission();
-      if (permission !== 'granted') return;
-      // Esperar a que el SW esté completamente activo antes de suscribir
-      const reg = await navigator.serviceWorker.ready;
-      await new Promise(r => setTimeout(r, 500));
-      const existingSub = await reg.pushManager.getSubscription();
-      const sub = existingSub || await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC),
-      });
-      await sb.from('push_subscriptions').upsert({ user_id: userId, subscription: sub.toJSON() }, { onConflict: 'user_id' });
-    } catch (e) { console.log('Push error:', e); }
   }
 
   if ('serviceWorker' in navigator) {
@@ -2398,6 +2418,20 @@
     if (error) { msg.textContent = t('misc.publish_error'); btn.disabled = false; btn.textContent = t('proponer.btn'); return; }
     document.getElementById('proponer-overlay').classList.remove('open');
     await loadPartidas(current.name);
+
+    // Push a todos los usuarios de este deporte
+    sb.from('profiles').select('id').eq('deporte', current.key).neq('id', currentUser.id).then(({ data: users }) => {
+      if (!users || users.length === 0) return;
+      fetch(SUPABASE_URL + '/functions/v1/send-push', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to_user_ids: users.map(u => u.id),
+          title: `${current.emoji} Nueva partida de ${current.name}`,
+          body: `${perfil?.nombre || 'Alguien'} propone jugar en ${document.getElementById('pp-ciudad').value.trim()} — ¡apúntate!`,
+        }),
+      }).catch(() => {});
+    });
 
     // Avisar por email a todos los usuarios de este deporte
     fetch(SUPABASE_URL + '/functions/v1/send-partida', {
@@ -2507,6 +2541,15 @@
         deporte: partida.deporte,
         deporte_emoji: partida.deporte_emoji,
       }}).catch(() => {});
+      fetch(SUPABASE_URL + '/functions/v1/send-push', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to_user_id: partida.creador_id,
+          title: `${partida.deporte_emoji} ¡Se apuntaron a tu partida!`,
+          body: `${perfil?.nombre || 'Alguien'} se apuntó a tu partida de ${partida.deporte} en ${partida.ciudad}`,
+        }),
+      }).catch(() => {});
     }
     await loadPartidas(current.name);
   }

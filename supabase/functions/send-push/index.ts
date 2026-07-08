@@ -1,49 +1,47 @@
+// Push vía OneSignal. Requiere secrets: ONESIGNAL_APP_ID y ONESIGNAL_API_KEY
+// Body: { to_user_ids: string[] (o to_user_id: string), title, body }
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Minimal web-push implementation using VAPID
-async function sendPushNotification(subscription: any, payload: string, vapidPrivate: string, vapidPublic: string) {
-  const webpush = await import("https://esm.sh/web-push@3.6.7");
-  webpush.setVapidDetails(
-    "mailto:noreply@sportmatchapp.es",
-    vapidPublic,
-    vapidPrivate
-  );
-  await webpush.sendNotification(subscription, payload);
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const { to_user_id, title, body } = await req.json();
-
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
-    const { data: subs } = await supabase
-      .from("push_subscriptions")
-      .select("subscription")
-      .eq("user_id", to_user_id);
-
-    if (!subs || subs.length === 0) {
+    const { to_user_id, to_user_ids, title, body } = await req.json();
+    const ids: string[] = to_user_ids || (to_user_id ? [to_user_id] : []);
+    if (ids.length === 0) {
       return new Response(JSON.stringify({ ok: true, sent: 0 }), { status: 200, headers: corsHeaders });
     }
 
-    const VAPID_PRIVATE = Deno.env.get("VAPID_PRIVATE_KEY")!;
-    const VAPID_PUBLIC = Deno.env.get("VAPID_PUBLIC_KEY")!;
-    const payload = JSON.stringify({ title, body });
+    const APP_ID = Deno.env.get("ONESIGNAL_APP_ID");
+    const API_KEY = Deno.env.get("ONESIGNAL_API_KEY");
+    if (!APP_ID || !API_KEY) {
+      return new Response(JSON.stringify({ ok: false, reason: "OneSignal no configurado" }), { status: 200, headers: corsHeaders });
+    }
 
-    await Promise.all(subs.map(s => sendPushNotification(s.subscription, payload, VAPID_PRIVATE, VAPID_PUBLIC)));
+    const res = await fetch("https://api.onesignal.com/notifications", {
+      method: "POST",
+      headers: {
+        "Authorization": `Key ${API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        app_id: APP_ID,
+        target_channel: "push",
+        include_aliases: { external_id: ids },
+        headings: { en: title, es: title },
+        contents: { en: body, es: body },
+        url: "https://sportmatchapp.es/app.html",
+      }),
+    });
+    const result = await res.json();
+    console.log("OneSignal response:", JSON.stringify(result).slice(0, 200));
 
-    return new Response(JSON.stringify({ ok: true, sent: subs.length }), { status: 200, headers: corsHeaders });
+    return new Response(JSON.stringify({ ok: res.ok, result }), { status: 200, headers: corsHeaders });
   } catch (e) {
     return new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: corsHeaders });
   }
