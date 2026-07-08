@@ -419,7 +419,7 @@
       </div>
     </div>
     <div style="padding:8px 18px 0;display:flex;gap:8px" id="amigos-btn-wrap">
-      <button id="friends-btn" onclick="buscarAmigos()" style="flex:1;background:#f0fdf4;border:1.5px solid #bbf7d0;color:#16a34a;border-radius:12px;padding:12px;font-size:0.9rem;font-weight:800;cursor:pointer">👥 Buscar amigos en contactos</button>
+      <button id="friends-btn" onclick="buscarAmigos()" style="flex:1;background:#f0fdf4;border:1.5px solid #bbf7d0;color:#16a34a;border-radius:12px;padding:12px;font-size:0.9rem;font-weight:800;cursor:pointer">👥 Buscar amigos</button>
     </div>
     <div id="amigos-result"></div>
     <div class="section-label" id="home-sports-label">Deportes</div>
@@ -965,42 +965,51 @@
     const el = document.getElementById('amigos-result');
     el.innerHTML = `
       <div style="padding:8px 18px 12px">
-        <p style="font-size:0.85rem;color:#6b7280;margin-bottom:8px">${t('contacts.email_hint')}</p>
-        <div style="display:flex;gap:8px;margin-bottom:8px">
-          <input id="amigo-email" type="email" placeholder="email@ejemplo.com" style="flex:1;padding:11px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:0.95rem;outline:none"
-            onkeydown="if(event.key==='Enter')buscarAmigoPorEmail()" />
-          <button onclick="buscarAmigoPorEmail()" style="background:#16a34a;color:#fff;border:none;border-radius:10px;padding:11px 16px;font-weight:800;cursor:pointer;flex-shrink:0">🔍</button>
+        <p style="font-size:0.85rem;color:#6b7280;margin-bottom:8px">${t('contacts.name_hint')}</p>
+        <div style="display:flex;gap:8px;align-items:center;background:#f1f5f9;border-radius:10px;padding:2px 2px 2px 14px;margin-bottom:8px">
+          <span>🔍</span>
+          <input id="amigo-nombre" type="text" placeholder="${t('contacts.name_placeholder')}" style="flex:1;padding:10px 4px;border:none;background:transparent;font-size:0.95rem;outline:none"
+            oninput="buscarAmigoPorNombre()" />
         </div>
         <div id="amigo-email-result"></div>
         <button onclick="invitarAmigos()" style="width:100%;background:#fff;border:1.5px solid #16a34a;color:#16a34a;border-radius:10px;padding:11px;font-size:0.9rem;font-weight:800;cursor:pointer">${t('contacts.invite')}</button>
       </div>`;
   }
 
-  async function buscarAmigoPorEmail() {
-    const email = document.getElementById('amigo-email').value.trim().toLowerCase();
-    const res = document.getElementById('amigo-email-result');
-    if (!email) return;
-    res.innerHTML = `<p style="color:#9ca3af;font-size:0.85rem;padding:4px 0">${t('contacts.searching')}</p>`;
-    const { data: p } = await sb.from('profiles')
-      .select('id,nombre,deporte,ciudad,avatar_url')
-      .eq('email', email)
-      .neq('id', currentUser ? currentUser.id : '')
-      .maybeSingle();
-    if (!p) {
-      res.innerHTML = `<p style="color:#9ca3af;font-size:0.9rem;padding:4px 0 10px">${t('contacts.not_found')}</p>`;
-      return;
-    }
+  function amigoCardHTML(p) {
     const avatarHtml = p.avatar_url
       ? `<img src="${p.avatar_url}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0"/>`
       : `<div style="width:44px;height:44px;border-radius:50%;background:#16a34a;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem;flex-shrink:0">${escapeHtml((p.nombre||'?').charAt(0).toUpperCase())}</div>`;
-    res.innerHTML = `<div style="display:flex;align-items:center;gap:12px;background:#f0fdf4;border-radius:12px;padding:12px;margin-bottom:10px;border:1.5px solid #bbf7d0">
+    const s = p.deporte && SPORT_BY_KEY[p.deporte];
+    const deporteTxt = s ? `${s.emoji} ${sportName(s)}` : (p.deporte || '');
+    return `<div style="display:flex;align-items:center;gap:12px;background:#f0fdf4;border-radius:12px;padding:12px;margin-bottom:8px;border:1.5px solid #bbf7d0">
       ${avatarHtml}
       <div style="flex:1">
         <p style="font-weight:800;margin:0">${escapeHtml(p.nombre||'Deportista')}</p>
-        <p style="color:#6b7280;font-size:0.85rem;margin:2px 0 0">${p.deporte||''} · ${p.ciudad||''}</p>
+        <p style="color:#6b7280;font-size:0.85rem;margin:2px 0 0">${deporteTxt}${p.ciudad ? ' · ' + escapeHtml(p.ciudad) : ''}</p>
       </div>
       <button onclick="verPerfilUsuario('${p.id}')" style="background:#16a34a;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:0.85rem;font-weight:800;cursor:pointer">${t('contacts.view')}</button>
     </div>`;
+  }
+
+  let amigoSearchTimer = null;
+  function buscarAmigoPorNombre() {
+    clearTimeout(amigoSearchTimer);
+    amigoSearchTimer = setTimeout(async () => {
+      const q = document.getElementById('amigo-nombre').value.trim();
+      const res = document.getElementById('amigo-email-result');
+      if (q.length < 2) { res.innerHTML = ''; return; }
+      res.innerHTML = `<p style="color:#9ca3af;font-size:0.85rem;padding:4px 0">${t('contacts.searching')}</p>`;
+      // Busca por nombre; si parece un email, busca por email exacto
+      let query = sb.from('profiles').select('id,nombre,deporte,ciudad,avatar_url').neq('id', currentUser ? currentUser.id : '').limit(10);
+      query = q.includes('@') ? query.eq('email', q.toLowerCase()) : query.ilike('nombre', `%${q}%`);
+      const { data: encontrados } = await query;
+      if (!encontrados || encontrados.length === 0) {
+        res.innerHTML = `<p style="color:#9ca3af;font-size:0.9rem;padding:4px 0 10px">${t('contacts.not_found')}</p>`;
+        return;
+      }
+      res.innerHTML = encontrados.map(amigoCardHTML).join('');
+    }, 350);
   }
 
   async function invitarAmigos() {
@@ -1806,7 +1815,7 @@
       'setup.ciudad':'¿En qué ciudad estás?','setup.btn':'Guardar y entrar →',
       'nivel.1':'Principiante','nivel.2':'Intermedio','nivel.3':'Avanzado',
       'home.title':'Elige tu deporte.<br><em>Encuentra con quién jugar.</em>',
-      'home.city':'¿En qué ciudad buscas?','home.friends':'👥 Buscar amigos en contactos','home.sports':'Deportes',
+      'home.city':'¿En qué ciudad buscas?','home.friends':'👥 Buscar amigos','home.sports':'Deportes',
       'sport.join':'Apuntarme →','sport.level':'Nivel','sport.distance':'Distancia','sport.any':'Cualquiera',
       'sport.city':'¿En qué ciudad buscas?','sport.no_profiles':'No hay perfiles con estos filtros.',
       'feed.compat':'Compatibilidad','feed.play':'Jugar','feed.play_with':'Jugar con',
@@ -1833,6 +1842,8 @@
       'contacts.no_support':'Tu navegador no soporta acceso a contactos. Prueba desde Safari en iOS o Chrome en Android.',
       'contacts.searching':'Buscando…','contacts.error':'No se pudo acceder a los contactos.',
       'contacts.email_hint':'Busca a un amigo por su email o invítale a SportMatch:',
+      'contacts.name_hint':'Busca a tus amigos por nombre:',
+      'contacts.name_placeholder':'Nombre de tu amigo…',
       'contacts.invite':'📣 Invitar amigos','contacts.not_found':'No está en SportMatch todavía. ¡Invítale!',
       'contacts.invite_text':'¡Únete a SportMatch y encontremos con quién jugar!','contacts.copied':'Enlace copiado. ¡Pégalo donde quieras!',
       'contacts.sports':'Deportes con jugadores en','contacts.no_city':'No hay jugadores registrados en',
@@ -1851,7 +1862,7 @@
       'setup.ciudad':'What city are you in?','setup.btn':'Save and continue →',
       'nivel.1':'Beginner','nivel.2':'Intermediate','nivel.3':'Advanced',
       'home.title':'Pick your sport.<br><em>Find someone to play with.</em>',
-      'home.city':'Which city are you looking in?','home.friends':'👥 Find friends in contacts','home.sports':'Sports',
+      'home.city':'Which city are you looking in?','home.friends':'👥 Find friends','home.sports':'Sports',
       'sport.join':'Join →','sport.level':'Level','sport.distance':'Distance','sport.any':'Any',
       'sport.city':'Which city are you looking in?','sport.no_profiles':'No profiles match your filters.',
       'feed.compat':'Compatibility','feed.play':'Play','feed.play_with':'Play with',
@@ -1878,6 +1889,8 @@
       'contacts.no_support':'Your browser does not support contact access. Try Safari on iOS or Chrome on Android.',
       'contacts.searching':'Searching…','contacts.error':'Could not access contacts.',
       'contacts.email_hint':'Find a friend by email or invite them to SportMatch:',
+      'contacts.name_hint':'Find your friends by name:',
+      'contacts.name_placeholder':'Your friend\'s name…',
       'contacts.invite':'📣 Invite friends','contacts.not_found':'Not on SportMatch yet. Invite them!',
       'contacts.invite_text':'Join SportMatch and let\'s find someone to play with!','contacts.copied':'Link copied. Paste it anywhere!',
       'contacts.sports':'Sports with players in','contacts.no_city':'No registered players in',
