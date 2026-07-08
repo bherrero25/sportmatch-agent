@@ -280,7 +280,10 @@
     <form id="auth-form" style="display:flex;flex-direction:column;gap:10px;width:100%">
       <input id="auth-nombre" type="text" placeholder="Tu nombre" style="display:none;padding:13px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1rem;width:100%" />
       <input id="auth-email" type="email" placeholder="Tu email" required style="padding:13px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1rem;width:100%" />
-      <input id="auth-pass" type="password" placeholder="Contraseña" required style="padding:13px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1rem;width:100%" />
+      <div style="position:relative">
+        <input id="auth-pass" type="password" placeholder="Contraseña" required style="padding:13px 44px 13px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1rem;width:100%" />
+        <button type="button" onclick="togglePass()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1.1rem;color:#9ca3af" id="pass-eye">👁</button>
+      </div>
       <button type="submit" id="auth-btn" class="welcome-btn" style="margin-top:4px">Entrar →</button>
     </form>
     <p id="auth-msg" style="font-size:0.85rem;color:#ef4444;text-align:center;min-height:18px"></p>
@@ -310,6 +313,7 @@
         <option value="ciclismo">🚴 Ciclismo</option>
         <option value="surf">🏄 Surf</option>
         <option value="submarinismo">🤿 Submarinismo</option>
+        <option value="pilota">🟡 Pilota Valenciana</option>
       </select>
       <select id="pf-nivel" required style="padding:13px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1rem;width:100%;background:#fff;color:#111">
         <option value="">¿Tu nivel?</option>
@@ -377,6 +381,7 @@
           <option value="ciclismo">🚴 Ciclismo</option>
           <option value="surf">🏄 Surf</option>
           <option value="submarinismo">🤿 Submarinismo</option>
+          <option value="pilota">🟡 Pilota Valenciana</option>
         </select>
         <select id="ep-nivel" style="padding:13px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1rem;width:100%;background:#fff;color:#111">
           <option value="">¿Tu nivel?</option>
@@ -643,6 +648,12 @@
         { name:'Carmen L.', age:38, loc:'Madrid · viaja a Lanzarote en agosto', lv:2, km:20, tags:['PADI Advanced','Arrecife','Mañanas','🇬🇧'], bio:'Buceadora con experiencia, viajo sola y siempre busco compañero de inmersión.', img:'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=600&q=75' },
         { name:'Tomás P.', age:44, loc:'Málaga · disponible localmente', lv:3, km:12, tags:['Divemaster','Cueva','Técnico'], bio:'Divemaster local en la Costa del Sol. Si visitas la zona, encantado de bajar juntos.' },
       ] },
+    { key:'pilota', name:'Pilota Valenciana', emoji:'🟡', accent:'#b45309', dark:'#3b1a05', light:'#fef3c7',
+      tagline:'El deporte valenciano de siempre, con quien quiera jugar.', levelName:'Nivel',
+      profiles:[
+        { name:'Vicent M.', age:35, loc:'Valencia · trinquet del barrio', lv:2, km:8, tags:['Escala i corda','Tardes'], bio:'Juego en el trinquet los jueves. Busco rival de nivel similar.' },
+        { name:'Amparo R.', age:28, loc:'Gandia', lv:1, km:15, tags:['Raspall','Fines de semana'], bio:'Aprendiendo raspall, busco gente con quien practicar sin presión.' },
+      ] },
   ];
 
   const SPORT_BY_KEY = Object.fromEntries(SPORTS.map(s => [s.key, s]));
@@ -824,6 +835,7 @@
       'Running': 'salir a correr', 'Senderismo': 'hacer senderismo', 'Esquí': 'esquiar',
       'Escalada': 'escalar', 'Baloncesto': 'jugar al baloncesto', 'Fútbol': 'jugar al fútbol',
       'Ciclismo': 'salir en bici', 'Surf': 'surfear', 'Submarinismo': 'bucear',
+      'Pilota Valenciana': 'jugar a pilota',
     };
     return verbos[deporte] || 'jugar a ' + deporte;
   }
@@ -1382,6 +1394,9 @@
 
     panel.innerHTML = html;
     document.getElementById('notif-overlay').classList.add('open');
+    // Badge a 0 al abrir el panel — el usuario ha visto las notificaciones
+    badge.textContent = '0';
+    badge.style.display = 'none';
   }
 
   async function responderMatch(id, estado, btn) {
@@ -1395,6 +1410,13 @@
   /* ---------- CHAT REAL ---------- */
   let chatMatchId = null;
   let chatPollInterval = null;
+
+  function togglePass() {
+    const input = document.getElementById('auth-pass');
+    const eye = document.getElementById('pass-eye');
+    if (input.type === 'password') { input.type = 'text'; eye.style.opacity = '1'; }
+    else { input.type = 'password'; eye.style.opacity = '0.5'; }
+  }
 
   function escapeHtml(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
