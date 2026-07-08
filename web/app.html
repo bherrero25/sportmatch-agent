@@ -478,7 +478,7 @@
   </div>
 
   <footer>
-    SportMatch · Beta v13 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
+    SportMatch · Beta v14 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
   </footer>
 </div>
 
@@ -2198,10 +2198,14 @@
       const ext = file.name.split('.').pop();
       const path = `${currentUser.id}.${ext}`;
       const { error: upErr } = await sb.storage.from('avatars').upload(path, file, { upsert: true });
-      if (!upErr) {
-        const { data: urlData } = sb.storage.from('avatars').getPublicUrl(path);
-        avatar_url = urlData.publicUrl + '?t=' + Date.now();
+      if (upErr) {
+        msg.style.color = '#ef4444';
+        msg.textContent = 'Error al subir la foto: ' + upErr.message;
+        btn.disabled = false; btn.textContent = t('perfil.save');
+        return;
       }
+      const { data: urlData } = sb.storage.from('avatars').getPublicUrl(path);
+      avatar_url = urlData.publicUrl + '?t=' + Date.now();
     }
 
     const updates = {
