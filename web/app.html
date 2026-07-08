@@ -350,6 +350,9 @@
     <button class="back-btn" onclick="goHome()" aria-label="Volver">←</button>
     <div class="logo">Sport<em>Match</em></div>
     <div class="spacer"></div>
+    <button onclick="openChats()" style="position:relative;background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px 8px">
+      💬<span id="chat-badge" style="display:none;position:absolute;top:0;right:0;background:#ef4444;color:#fff;font-size:0.65rem;font-weight:900;border-radius:99px;width:16px;height:16px;align-items:center;justify-content:center">0</span>
+    </button>
     <button onclick="loadNotifications(true)" style="position:relative;background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px 8px">
       🔔<span id="notif-badge" style="display:none;position:absolute;top:0;right:0;background:#ef4444;color:#fff;font-size:0.65rem;font-weight:900;border-radius:99px;width:16px;height:16px;align-items:center;justify-content:center">0</span>
     </button>
@@ -395,6 +398,14 @@
         <p id="ep-msg" style="font-size:0.85rem;text-align:center;min-height:18px;color:#16a34a"></p>
       </form>
       <button id="perfil-logout-btn" onclick="cerrarSesion()" style="width:100%;margin-top:8px;padding:13px;background:#f1f5f9;color:#ef4444;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <!-- PANEL DE CHATS -->
+  <div class="overlay" id="chats-overlay" onclick="if(event.target===this)this.classList.remove('open')">
+    <div class="modal">
+      <div class="modal-head"><h3 id="chats-title">💬 Chats</h3><button class="modal-close" onclick="document.getElementById('chats-overlay').classList.remove('open')">✕</button></div>
+      <div id="chats-panel" style="margin-top:8px"></div>
     </div>
   </div>
 
@@ -478,7 +489,7 @@
   </div>
 
   <footer>
-    SportMatch · Beta v14 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
+    SportMatch · Beta v15 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
   </footer>
 </div>
 
@@ -1486,86 +1497,13 @@
       .eq('estado', 'pendiente')
       .order('created_at', { ascending: false });
 
-    // Matches activos: yo acepté (to_id=me) o me aceptaron (from_id=me)
-    const { data: misMatchesEnviados } = await sb.from('solicitudes_match')
-      .select('*')
-      .eq('from_id', currentUser.id)
-      .eq('estado', 'aceptado')
-      .order('created_at', { ascending: false });
-
-    const { data: misMatchesRecibidos } = await sb.from('solicitudes_match')
-      .select('*')
-      .eq('to_id', currentUser.id)
-      .eq('estado', 'aceptado')
-      .order('created_at', { ascending: false });
-
-    const matches = [...(misMatchesEnviados || []), ...(misMatchesRecibidos || [])];
-
-    // Mensajes no leídos de otros usuarios en mis matches
-    let mensajesNoLeidos = [];
-    if (matches.length > 0) {
-      const matchIds = matches.map(m => m.id);
-      const { data: noLeidos } = await sb.from('mensajes')
-        .select('match_id')
-        .in('match_id', matchIds)
-        .neq('from_id', currentUser.id)
-        .eq('leido', false);
-      mensajesNoLeidos = noLeidos || [];
-    }
-
-    const noLeidosPorMatch = {};
-    mensajesNoLeidos.forEach(m => {
-      noLeidosPorMatch[m.match_id] = (noLeidosPorMatch[m.match_id] || 0) + 1;
-    });
-
-    const totalNoLeidos = mensajesNoLeidos.length;
     const totalPendientes = pendientes?.length || 0;
-    const totalBadge = totalPendientes + totalNoLeidos;
-
     const badge = document.getElementById('notif-badge');
-    badge.textContent = totalBadge;
-    badge.style.display = totalBadge > 0 ? 'flex' : 'none';
+    badge.textContent = totalPendientes;
+    badge.style.display = totalPendientes > 0 ? 'flex' : 'none';
 
     const panel = document.getElementById('notif-panel');
     let html = '';
-
-    if (matches.length > 0) {
-      // Buscar avatares de los otros usuarios
-      const otrosIds = matches.map(s => s.from_id === currentUser.id ? s.to_id : s.from_id);
-      const { data: otrosPerfiles } = await sb.from('profiles').select('id,avatar_url').in('id', otrosIds);
-      const avatarPorId = {};
-      (otrosPerfiles || []).forEach(p => { avatarPorId[p.id] = p.avatar_url; });
-
-      html += `<p style="font-size:0.8rem;font-weight:800;color:#16a34a;margin-bottom:8px">${t('notif.matches')}</p>`;
-      html += matches.map(s => {
-        const esEnviado = s.from_id === currentUser.id;
-        const otroId = esEnviado ? s.to_id : s.from_id;
-        const otroNombre = esEnviado ? (s.to_nombre || 'Tu compañero') : s.from_nombre;
-        const otroAvatar = avatarPorId[otroId] || '';
-        const nuevos = noLeidosPorMatch[s.id] || 0;
-        const btnLabel = nuevos > 0 ? `💬 ${nuevos} ${nuevos > 1 ? t('notif.new_msgs') : t('notif.new_msg')}` : t('notif.chat');
-        const btnStyle = nuevos > 0
-          ? 'width:100%;padding:10px;background:#15803d;color:#fff;border:none;border-radius:8px;font-weight:800;cursor:pointer;box-shadow:0 0 0 3px #bbf7d0'
-          : 'width:100%;padding:10px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-weight:800;cursor:pointer';
-        const avatarHtml = otroAvatar
-          ? `<img src="${otroAvatar}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0" />`
-          : `<div style="width:44px;height:44px;border-radius:50%;background:#16a34a;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.2rem;flex-shrink:0">${escapeHtml(otroNombre.charAt(0).toUpperCase())}</div>`;
-        return `
-        <div style="background:#f0fdf4;border-radius:12px;padding:14px 16px;margin-bottom:10px;border:1.5px solid #bbf7d0">
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
-            ${avatarHtml}
-            <div>
-              <p style="font-weight:800;color:#16a34a;margin:0">${escapeHtml(otroNombre)}</p>
-              <p style="color:#374151;font-size:0.85rem;margin:0">${s.deporte_emoji} ${s.deporte}</p>
-            </div>
-          </div>
-          <div style="display:flex;gap:8px">
-            <button onclick="verPerfilUsuario('${otroId}')" style="padding:10px 14px;background:#f1f5f9;color:#374151;border:none;border-radius:8px;font-weight:700;cursor:pointer">${t('match.profile')}</button>
-            <button onclick="document.getElementById('notif-overlay').classList.remove('open'); openChat('${s.id}','${otroNombre.replace(/'/g,"\\'")}','${otroAvatar}','${otroId}');" style="flex:1;${btnStyle}">${btnLabel}</button>
-          </div>
-        </div>`;
-      }).join('');
-    }
 
     if (pendientes && pendientes.length > 0) {
       html += `<p style="font-size:0.8rem;font-weight:800;color:#374151;margin:12px 0 8px">${t('notif.requests')}</p>`;
@@ -1611,6 +1549,75 @@
       badge.textContent = '0';
       badge.style.display = 'none';
     }
+  }
+
+  /* ---------- LISTA DE CHATS ---------- */
+  async function openChats() {
+    if (!currentUser) return;
+    const panel = document.getElementById('chats-panel');
+    panel.innerHTML = `<p style="color:#9ca3af;text-align:center;padding:20px">${t('chat.loading')}</p>`;
+    document.getElementById('chats-overlay').classList.add('open');
+
+    const [{ data: env }, { data: rec }] = await Promise.all([
+      sb.from('solicitudes_match').select('*').eq('from_id', currentUser.id).eq('estado', 'aceptado'),
+      sb.from('solicitudes_match').select('*').eq('to_id', currentUser.id).eq('estado', 'aceptado'),
+    ]);
+    const matches = [...(env || []), ...(rec || [])];
+
+    if (matches.length === 0) {
+      panel.innerHTML = `<p style="color:#9ca3af;text-align:center;padding:20px">${t('chats.empty')}</p>`;
+      return;
+    }
+
+    const matchIds = matches.map(m => m.id);
+    const otrosIds = matches.map(s => s.from_id === currentUser.id ? s.to_id : s.from_id);
+
+    const [{ data: otrosPerfiles }, { data: mensajes }] = await Promise.all([
+      sb.from('profiles').select('id,avatar_url').in('id', otrosIds),
+      sb.from('mensajes').select('match_id,from_id,texto,leido,created_at').in('match_id', matchIds).order('created_at', { ascending: false }).limit(300),
+    ]);
+    const avatarPorId = {};
+    (otrosPerfiles || []).forEach(p => { avatarPorId[p.id] = p.avatar_url; });
+
+    // Último mensaje y no leídos por match
+    const ultimoPorMatch = {};
+    const noLeidosPorMatch = {};
+    (mensajes || []).forEach(m => {
+      if (!ultimoPorMatch[m.match_id]) ultimoPorMatch[m.match_id] = m;
+      if (m.from_id !== currentUser.id && !m.leido) noLeidosPorMatch[m.match_id] = (noLeidosPorMatch[m.match_id] || 0) + 1;
+    });
+
+    // Ordenar: chats con mensajes más recientes primero
+    matches.sort((a, b) => {
+      const ta = ultimoPorMatch[a.id] ? new Date(ultimoPorMatch[a.id].created_at).getTime() : 0;
+      const tb = ultimoPorMatch[b.id] ? new Date(ultimoPorMatch[b.id].created_at).getTime() : 0;
+      return tb - ta;
+    });
+
+    panel.innerHTML = matches.map(s => {
+      const esEnviado = s.from_id === currentUser.id;
+      const otroId = esEnviado ? s.to_id : s.from_id;
+      const otroNombre = esEnviado ? (s.to_nombre || 'Tu compañero') : s.from_nombre;
+      const otroAvatar = avatarPorId[otroId] || '';
+      const ultimo = ultimoPorMatch[s.id];
+      const nuevos = noLeidosPorMatch[s.id] || 0;
+      const preview = ultimo
+        ? (ultimo.from_id === currentUser.id ? 'Tú: ' : '') + ultimo.texto
+        : t('chat.say_hi');
+      const avatarHtml = otroAvatar
+        ? `<img src="${otroAvatar}" style="width:50px;height:50px;border-radius:50%;object-fit:cover;flex-shrink:0" />`
+        : `<div style="width:50px;height:50px;border-radius:50%;background:#16a34a;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.3rem;flex-shrink:0">${escapeHtml(otroNombre.charAt(0).toUpperCase())}</div>`;
+      return `
+      <div onclick="document.getElementById('chats-overlay').classList.remove('open'); openChat('${s.id}','${otroNombre.replace(/'/g,"\\'")}','${otroAvatar}','${otroId}');"
+        style="display:flex;align-items:center;gap:12px;padding:12px 4px;border-bottom:1px solid #f1f5f9;cursor:pointer">
+        ${avatarHtml}
+        <div style="flex:1;min-width:0">
+          <p style="font-weight:800;margin:0">${escapeHtml(otroNombre)} <span style="font-weight:400">${s.deporte_emoji}</span></p>
+          <p style="color:${nuevos > 0 ? '#111' : '#9ca3af'};font-weight:${nuevos > 0 ? '700' : '400'};font-size:0.88rem;margin:2px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(preview)}</p>
+        </div>
+        ${nuevos > 0 ? `<span style="background:#16a34a;color:#fff;font-size:0.75rem;font-weight:900;border-radius:99px;min-width:22px;height:22px;display:flex;align-items:center;justify-content:center;padding:0 6px;flex-shrink:0">${nuevos}</span>` : ''}
+      </div>`;
+    }).join('');
   }
 
   async function responderMatch(id, estado, btn) {
@@ -1763,7 +1770,7 @@
     if (sinLeer.length > 0) {
       // Sin await la consulta nunca se ejecutaba — los mensajes quedaban como no leídos
       await sb.from('mensajes').update({ leido: true }).in('id', sinLeer);
-      loadNotifications(false);
+      checkNuevosMensajes();
     }
     const wasAtBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 40;
     body.innerHTML = msgs.map(m => `
@@ -1822,9 +1829,12 @@
       .neq('from_id', currentUser.id)
       .eq('leido', false)
       .order('created_at', { ascending: false });
-    if (!noLeidos || noLeidos.length === 0) return;
-    // Actualizar el numerito de la campana
-    loadNotifications(false);
+    // Numerito del icono de chats
+    const cb = document.getElementById('chat-badge');
+    const n = noLeidos ? noLeidos.length : 0;
+    cb.textContent = n;
+    cb.style.display = n > 0 ? 'flex' : 'none';
+    if (n === 0) return;
     // Popup solo para mensajes que no hemos avisado ya y cuyo chat no está abierto
     const nuevo = noLeidos.find(m => !notifiedMsgIds.has(m.id) && m.match_id !== chatMatchId);
     noLeidos.forEach(m => notifiedMsgIds.add(m.id));
@@ -1880,7 +1890,8 @@
       'notif.new_msg':'mensaje nuevo','notif.new_msgs':'mensajes nuevos','notif.empty':'No tienes solicitudes.',
       'notif.partidas':'🏟️ NUEVOS EN TUS PARTIDAS','notif.apuntado':'se apuntó a tu partida de','notif.en':'en',
       'match.profile':'👤 Perfil','match.confirmed':'¡Match confirmado!',
-      'chat.placeholder':'Escribe un mensaje…','chat.say_hi':'¡Di hola! 👋','chat.rate':'⭐ Valorar',
+      'chats.empty':'Aún no tienes chats. ¡Haz un match!',
+    'chat.placeholder':'Escribe un mensaje…','chat.say_hi':'¡Di hola! 👋','chat.rate':'⭐ Valorar',
       'chat.loading':'Cargando…','chat.sportmatch':'SportMatch',
       'rate.title':'⭐ Valorar partida','rate.sub':'¿Cómo fue jugar con','rate.comment':'Comentario opcional…','rate.btn':'Guardar valoración',
       'partida.open':'🏟️ Partidas abiertas','partida.propose':'+ Proponer','partida.join':'Apuntarme',
@@ -1927,7 +1938,8 @@
       'notif.new_msg':'new message','notif.new_msgs':'new messages','notif.empty':'No requests yet.',
       'notif.partidas':'🏟️ NEW IN YOUR GAMES','notif.apuntado':'joined your game of','notif.en':'in',
       'match.profile':'👤 Profile','match.confirmed':'Match confirmed!',
-      'chat.placeholder':'Write a message…','chat.say_hi':'Say hi! 👋','chat.rate':'⭐ Rate',
+      'chats.empty':'No chats yet. Make a match!',
+    'chat.placeholder':'Write a message…','chat.say_hi':'Say hi! 👋','chat.rate':'⭐ Rate',
       'chat.loading':'Loading…','chat.sportmatch':'SportMatch',
       'rate.title':'⭐ Rate the game','rate.sub':'How was playing with','rate.comment':'Optional comment…','rate.btn':'Save rating',
       'partida.open':'🏟️ Open games','partida.propose':'+ Propose','partida.join':'Join',
