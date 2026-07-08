@@ -287,7 +287,7 @@
       <button type="submit" id="auth-btn" class="welcome-btn" style="margin-top:4px">Entrar →</button>
     </form>
     <p id="auth-msg" style="font-size:0.85rem;color:#ef4444;text-align:center;min-height:18px"></p>
-    <p style="font-size:0.75rem;color:#9ca3af;text-align:center">Sin spam. Tus datos solo se usan para encontrar compañeros de juego.</p>
+    <p id="auth-privacy" style="font-size:0.75rem;color:#9ca3af;text-align:center">Sin spam. Tus datos solo se usan para encontrar compañeros de juego.</p>
   </div>
 </div>
 
@@ -295,8 +295,8 @@
 <div class="welcome" id="profile-setup" style="z-index:9998">
   <div class="welcome-card" style="gap:14px">
     <div class="welcome-logo">Sport<em>Match</em></div>
-    <h2 style="font-size:1.3rem">Cuéntanos sobre ti</h2>
-    <p style="font-size:0.9rem;color:#6b7280;margin-top:-8px">Solo tarda 30 segundos</p>
+    <h2 id="setup-title" style="font-size:1.3rem">Cuéntanos sobre ti</h2>
+    <p id="setup-sub" style="font-size:0.9rem;color:#6b7280;margin-top:-8px">Solo tarda 30 segundos</p>
     <form id="profile-form" style="display:flex;flex-direction:column;gap:12px;width:100%">
       <input id="pf-nombre" type="text" placeholder="Tu nombre" required style="padding:13px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1rem;width:100%" />
       <select id="pf-deporte" required style="padding:13px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1rem;width:100%;background:#fff;color:#111">
@@ -354,16 +354,17 @@
       🔔<span id="notif-badge" style="display:none;position:absolute;top:0;right:0;background:#ef4444;color:#fff;font-size:0.65rem;font-weight:900;border-radius:99px;width:16px;height:16px;align-items:center;justify-content:center">0</span>
     </button>
     <button id="perfil-btn" onclick="openPerfil()" style="display:none;background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px 8px">👤</button>
+    <button id="lang-btn" onclick="setLang(lang==='es'?'en':'es')" style="background:none;border:none;font-size:1.1rem;cursor:pointer;padding:4px 8px">🇬🇧</button>
   </div>
 
   <!-- MODAL PERFIL -->
   <div class="overlay" id="perfil-overlay" onclick="if(event.target===this)closePerfil()">
     <div class="modal">
-      <div class="modal-head"><h3>👤 Mi perfil</h3><button class="modal-close" onclick="closePerfil()">✕</button></div>
+      <div class="modal-head"><h3 id="perfil-title">👤 Mi perfil</h3><button class="modal-close" onclick="closePerfil()">✕</button></div>
       <form id="perfil-form" style="margin-top:12px;display:flex;flex-direction:column;gap:12px">
         <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
           <div id="ep-avatar-preview" style="width:80px;height:80px;border-radius:50%;background:#e2e8f0;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;color:#9ca3af;overflow:hidden;cursor:pointer" onclick="document.getElementById('ep-foto').click()">📷</div>
-          <label style="font-size:0.85rem;color:#6b7280;cursor:pointer" onclick="document.getElementById('ep-foto').click()">Toca para añadir foto</label>
+          <label id="perfil-photo-label" style="font-size:0.85rem;color:#6b7280;cursor:pointer" onclick="document.getElementById('ep-foto').click()">Toca para añadir foto</label>
           <input id="ep-foto" type="file" accept="image/*" style="display:none" onchange="previewAvatar(this)" />
         </div>
         <input id="ep-nombre" type="text" placeholder="Tu nombre" style="padding:13px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1rem;width:100%" />
@@ -390,17 +391,17 @@
           <option value="3">Avanzado</option>
         </select>
         <input id="ep-ciudad" type="text" placeholder="¿En qué ciudad estás?" style="padding:13px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1rem;width:100%" />
-        <button type="submit" style="padding:13px;background:#16a34a;color:#fff;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer">Guardar cambios</button>
+        <button id="perfil-save-btn" type="submit" style="padding:13px;background:#16a34a;color:#fff;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer">Guardar cambios</button>
         <p id="ep-msg" style="font-size:0.85rem;text-align:center;min-height:18px;color:#16a34a"></p>
       </form>
-      <button onclick="cerrarSesion()" style="width:100%;margin-top:8px;padding:13px;background:#f1f5f9;color:#ef4444;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer">Cerrar sesión</button>
+      <button id="perfil-logout-btn" onclick="cerrarSesion()" style="width:100%;margin-top:8px;padding:13px;background:#f1f5f9;color:#ef4444;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer">Cerrar sesión</button>
     </div>
   </div>
 
   <!-- PANEL NOTIFICACIONES -->
   <div class="overlay" id="notif-overlay" onclick="if(event.target===this)this.classList.remove('open')">
     <div class="modal">
-      <div class="modal-head"><h3>🔔 Solicitudes</h3><button class="modal-close" onclick="document.getElementById('notif-overlay').classList.remove('open')">✕</button></div>
+      <div class="modal-head"><h3 id="notif-title">🔔 Solicitudes</h3><button class="modal-close" onclick="document.getElementById('notif-overlay').classList.remove('open')">✕</button></div>
       <div id="notif-panel" style="margin-top:12px"></div>
     </div>
   </div>
@@ -408,7 +409,7 @@
   <!-- HOME -->
   <div id="view-home">
     <div class="home-hero">
-      <h1>Elige tu deporte.<br><em>Encuentra con quién jugar.</em></h1>
+      <h1 id="home-hero-title">Elige tu deporte.<br><em>Encuentra con quién jugar.</em></h1>
     </div>
     <div style="padding:0 18px 4px">
       <div style="display:flex;gap:8px;align-items:center;background:#f1f5f9;border-radius:14px;padding:12px 16px">
@@ -418,10 +419,10 @@
       </div>
     </div>
     <div style="padding:8px 18px 0;display:flex;gap:8px" id="amigos-btn-wrap">
-      <button onclick="buscarAmigos()" style="flex:1;background:#f0fdf4;border:1.5px solid #bbf7d0;color:#16a34a;border-radius:12px;padding:12px;font-size:0.9rem;font-weight:800;cursor:pointer">👥 Buscar amigos en contactos</button>
+      <button id="friends-btn" onclick="buscarAmigos()" style="flex:1;background:#f0fdf4;border:1.5px solid #bbf7d0;color:#16a34a;border-radius:12px;padding:12px;font-size:0.9rem;font-weight:800;cursor:pointer">👥 Buscar amigos en contactos</button>
     </div>
     <div id="amigos-result"></div>
-    <div class="section-label">Deportes</div>
+    <div class="section-label" id="home-sports-label">Deportes</div>
     <div class="sport-grid" id="sport-grid"></div>
   </div>
 
@@ -444,7 +445,7 @@
 
     <div class="filters">
       <div class="filter-block">
-        <span>Nivel</span>
+        <span id="level-label">Nivel</span>
         <div class="chips" id="filter-level">
           <button class="chip active" data-lv="all">Cualquiera</button>
           <button class="chip" data-lv="1">Principiante</button>
@@ -453,7 +454,7 @@
         </div>
       </div>
       <div class="filter-block">
-        <span>Distancia</span>
+        <span id="dist-label">Distancia</span>
         <div class="chips" id="filter-dist">
           <button class="chip" data-km="5">5 km</button>
           <button class="chip" data-km="25">25 km</button>
@@ -469,8 +470,8 @@
     <!-- PARTIDAS -->
     <div style="padding:16px 18px 0">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <div style="font-size:0.8rem;font-weight:800;color:#374151;text-transform:uppercase;letter-spacing:0.05em">🏟️ Partidas abiertas</div>
-        <button onclick="abrirProponerPartida()" style="background:#16a34a;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:0.85rem;font-weight:800;cursor:pointer">+ Proponer</button>
+        <div id="partidas-title" style="font-size:0.8rem;font-weight:800;color:#374151;text-transform:uppercase;letter-spacing:0.05em">🏟️ Partidas abiertas</div>
+        <button id="partidas-propose-btn" onclick="abrirProponerPartida()" style="background:#16a34a;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:0.85rem;font-weight:800;cursor:pointer">+ Proponer</button>
       </div>
       <div id="partidas-list"></div>
     </div>
@@ -537,7 +538,7 @@
 <!-- PROPONER PARTIDA -->
 <div class="overlay" id="proponer-overlay" onclick="if(event.target===this)this.classList.remove('open')">
   <div class="modal">
-    <div class="modal-head"><h3>🏟️ Proponer partida</h3><button class="modal-close" onclick="document.getElementById('proponer-overlay').classList.remove('open')">✕</button></div>
+    <div class="modal-head"><h3 id="proponer-title">🏟️ Proponer partida</h3><button class="modal-close" onclick="document.getElementById('proponer-overlay').classList.remove('open')">✕</button></div>
     <form id="proponer-form" style="margin-top:12px;display:flex;flex-direction:column;gap:12px">
       <input id="pp-ciudad" type="text" placeholder="Ciudad" required style="padding:13px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1rem;width:100%" />
       <div style="display:flex;gap:8px">
@@ -561,8 +562,8 @@
 <!-- VALORAR PARTIDA -->
 <div class="overlay" id="valorar-overlay" onclick="if(event.target===this)this.classList.remove('open')" data-estrellas="0">
   <div class="modal" style="padding:24px;text-align:center">
-    <h3 style="margin-bottom:4px">⭐ Valorar partida</h3>
-    <p style="color:#6b7280;font-size:0.9rem;margin-bottom:20px">¿Cómo fue jugar con <span id="val-nombre"></span>?</p>
+    <h3 id="rate-title" style="margin-bottom:4px">⭐ Valorar partida</h3>
+    <p style="color:#6b7280;font-size:0.9rem;margin-bottom:20px"><span id="rate-sub">¿Cómo fue jugar con</span> <span id="val-nombre"></span>?</p>
     <div style="display:flex;justify-content:center;gap:12px;margin-bottom:20px">
       <button class="estrella-btn" onclick="seleccionarEstrella(1)" style="background:none;border:none;font-size:2.2rem;cursor:pointer;opacity:0.3;transition:all 0.15s">⭐</button>
       <button class="estrella-btn" onclick="seleccionarEstrella(2)" style="background:none;border:none;font-size:2.2rem;cursor:pointer;opacity:0.3;transition:all 0.15s">⭐</button>
@@ -834,14 +835,22 @@
   }
 
   function verbDeporte(deporte) {
-    const verbos = {
+    const verbosES = {
       'Golf': 'jugar al golf', 'Pádel': 'jugar al pádel', 'Tenis': 'jugar al tenis',
       'Running': 'salir a correr', 'Senderismo': 'hacer senderismo', 'Esquí': 'esquiar',
       'Escalada': 'escalar', 'Baloncesto': 'jugar al baloncesto', 'Fútbol': 'jugar al fútbol',
       'Ciclismo': 'salir en bici', 'Surf': 'surfear', 'Submarinismo': 'bucear',
       'Pilota Valenciana': 'jugar a pilota',
     };
-    return verbos[deporte] || 'jugar a ' + deporte;
+    const verbosEN = {
+      'Golf': 'play golf', 'Pádel': 'play padel', 'Tenis': 'play tennis',
+      'Running': 'go running', 'Senderismo': 'go hiking', 'Esquí': 'go skiing',
+      'Escalada': 'go climbing', 'Baloncesto': 'play basketball', 'Fútbol': 'play football',
+      'Ciclismo': 'go cycling', 'Surf': 'go surfing', 'Submarinismo': 'go diving',
+      'Pilota Valenciana': 'play pilota',
+    };
+    const verbos = lang === 'en' ? verbosEN : verbosES;
+    return verbos[deporte] || (lang === 'en' ? 'play ' + deporte : 'jugar a ' + deporte);
   }
 
   function goHome() {
@@ -878,7 +887,7 @@
   async function buscarAmigos() {
     const el = document.getElementById('amigos-result');
     if (!('contacts' in navigator && 'ContactsManager' in window)) {
-      el.innerHTML = '<p style="color:#9ca3af;font-size:0.85rem;padding:8px 18px">Tu navegador no soporta acceso a contactos. Prueba desde Safari en iOS o Chrome en Android.</p>';
+      el.innerHTML = `<p style="color:#9ca3af;font-size:0.85rem;padding:8px 18px">${t('contacts.no_support')}</p>`;
       return;
     }
     try {
@@ -888,10 +897,10 @@
       // Recoger todos los emails de los contactos seleccionados
       const emails = [...new Set(contactos.flatMap(c => c.email || []).map(e => e.toLowerCase()))];
 
-      el.innerHTML = '<p style="color:#9ca3af;font-size:0.85rem;padding:8px 18px">Buscando…</p>';
+      el.innerHTML = `<p style="color:#9ca3af;font-size:0.85rem;padding:8px 18px">${t('contacts.searching')}</p>`;
 
       if (emails.length === 0) {
-        el.innerHTML = '<p style="color:#9ca3af;font-size:0.85rem;padding:8px 18px">Los contactos seleccionados no tienen email guardado.</p>';
+        el.innerHTML = `<p style="color:#9ca3af;font-size:0.85rem;padding:8px 18px">${t('contacts.no_email')}</p>`;
         return;
       }
 
@@ -905,7 +914,7 @@
 
       let html = '<div style="padding:0 18px 12px">';
       if (encontrados && encontrados.length > 0) {
-        html += `<p style="font-size:0.75rem;font-weight:800;color:#16a34a;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">✅ Ya están en SportMatch</p>`;
+        html += `<p style="font-size:0.75rem;font-weight:800;color:#16a34a;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">${t('contacts.found')}</p>`;
         html += encontrados.map(p => {
           const avatarHtml = p.avatar_url
             ? `<img src="${p.avatar_url}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0"/>`
@@ -916,19 +925,19 @@
               <p style="font-weight:800;margin:0">${escapeHtml(p.nombre||'Deportista')}</p>
               <p style="color:#6b7280;font-size:0.85rem;margin:2px 0 0">${p.deporte||''} · ${p.ciudad||''}</p>
             </div>
-            <button onclick="verPerfilUsuario('${p.id}')" style="background:#16a34a;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:0.85rem;font-weight:800;cursor:pointer">Ver</button>
+            <button onclick="verPerfilUsuario('${p.id}')" style="background:#16a34a;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:0.85rem;font-weight:800;cursor:pointer">${t('contacts.view')}</button>
           </div>`;
         }).join('');
       }
 
       if (encontrados && encontrados.length === 0) {
-        html += '<p style="color:#9ca3af;font-size:0.9rem;padding:8px 0">Ninguno de los contactos seleccionados está en SportMatch aún.</p>';
+        html += `<p style="color:#9ca3af;font-size:0.9rem;padding:8px 0">${t('contacts.none')}</p>`;
       }
 
       html += '</div>';
       el.innerHTML = html;
     } catch (e) {
-      el.innerHTML = '<p style="color:#9ca3af;font-size:0.85rem;padding:8px 18px">No se pudo acceder a los contactos.</p>';
+      el.innerHTML = `<p style="color:#9ca3af;font-size:0.85rem;padding:8px 18px">${t('contacts.error')}</p>`;
     }
   }
 
@@ -945,12 +954,12 @@
       document.getElementById('sport-grid').before(existing);
     }
     if (!data || data.length === 0) {
-      existing.innerHTML = `<p style="color:#9ca3af;font-size:0.85rem;padding:8px 0">No hay jugadores registrados en ${escapeHtml(ciudad)} aún.</p>`;
+      existing.innerHTML = `<p style="color:#9ca3af;font-size:0.85rem;padding:8px 0">${t('contacts.no_city')} ${escapeHtml(ciudad)} aún.</p>`;
       return;
     }
     const deportes = [...new Set(data.map(d => d.deporte))];
     const sports = deportes.map(key => SPORTS.find(s => s.key === key)).filter(Boolean);
-    existing.innerHTML = `<p style="font-size:0.75rem;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Deportes con jugadores en ${escapeHtml(ciudad)}</p>
+    existing.innerHTML = `<p style="font-size:0.75rem;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">${t('contacts.sports')} ${escapeHtml(ciudad)}</p>
       <div style="display:flex;flex-wrap:wrap;gap:8px">${sports.map(s => `
         <button onclick="openSport('${s.key}')" style="background:#f0fdf4;border:1.5px solid #bbf7d0;color:#16a34a;border-radius:99px;padding:7px 14px;font-size:0.9rem;font-weight:700;cursor:pointer">${s.emoji} ${s.name}</button>
       `).join('')}</div>`;
@@ -1006,10 +1015,10 @@
         <div class="feed-tags">${tags}</div>
         <div class="feed-bio">"${p.bio}"</div>
         <div class="feed-btns">
-          <button class="feed-btn ghost" onclick="openProfile(FEED[${i}])">📊 Compatibilidad</button>
+          <button class="feed-btn ghost" onclick="openProfile(FEED[${i}])">📊 ${t('feed.compat')}</button>
           ${p.real && p.uid
-            ? `<button class="feed-btn solid" id="match-btn-${p.uid}" onclick="sendMatchRequest('${p.uid}','${p.name.split(' ')[0]}')">${current.emoji} Jugar con ${p.name.split(' ')[0]}</button>`
-            : `<button class="feed-btn solid" onclick="openSurvey()">${current.emoji} Jugar</button>`}
+            ? `<button class="feed-btn solid" id="match-btn-${p.uid}" onclick="sendMatchRequest('${p.uid}','${p.name.split(' ')[0]}')">${current.emoji} ${t('feed.play_with')} ${p.name.split(' ')[0]}</button>`
+            : `<button class="feed-btn solid" onclick="openSurvey()">${current.emoji} ${t('feed.play')}</button>`}
         </div>
       </div>
     </div>`;
@@ -1019,11 +1028,11 @@
   function renderFeed() {
     const el = document.getElementById('feed');
     document.getElementById('result-count').innerHTML = FEED.length
-      ? `<b>${FEED.length}</b> ${FEED.length === 1 ? 'persona compatible' : 'personas compatibles'} · desliza ↑ ↓`
+      ? `<b>${FEED.length}</b> ${FEED.length === 1 ? t('feed.compatible') : t('feed.compatibles')} · ${t('feed.swipe')}`
       : '';
     if (!FEED.length) {
       el.classList.add('empty');
-      el.innerHTML = `<div class="deck-empty">No hay perfiles con estos filtros.<br>Amplía la distancia o el nivel, o apúntate y te avisamos cuando haya más.<br><button class="cta" style="background:var(--accent);color:#fff;border:none;padding:12px 20px;border-radius:11px;font-weight:800;cursor:pointer;margin-top:14px" onclick="openSurvey()">Apuntarme →</button></div>`;
+      el.innerHTML = `<div class="deck-empty">${t('sport.no_profiles')}<br>Amplía la distancia o el nivel, o apúntate y te avisamos cuando haya más.<br><button class="cta" style="background:var(--accent);color:#fff;border:none;padding:12px 20px;border-radius:11px;font-weight:800;cursor:pointer;margin-top:14px" onclick="openSurvey()">Apuntarme →</button></div>`;
       return;
     }
     el.classList.remove('empty');
@@ -1443,14 +1452,14 @@
       const avatarPorId = {};
       (otrosPerfiles || []).forEach(p => { avatarPorId[p.id] = p.avatar_url; });
 
-      html += '<p style="font-size:0.8rem;font-weight:800;color:#16a34a;margin-bottom:8px">💬 MIS MATCHES</p>';
+      html += `<p style="font-size:0.8rem;font-weight:800;color:#16a34a;margin-bottom:8px">${t('notif.matches')}</p>`;
       html += matches.map(s => {
         const esEnviado = s.from_id === currentUser.id;
         const otroId = esEnviado ? s.to_id : s.from_id;
         const otroNombre = esEnviado ? (s.to_nombre || 'Tu compañero') : s.from_nombre;
         const otroAvatar = avatarPorId[otroId] || '';
         const nuevos = noLeidosPorMatch[s.id] || 0;
-        const btnLabel = nuevos > 0 ? `💬 ${nuevos} mensaje${nuevos > 1 ? 's' : ''} nuevo${nuevos > 1 ? 's' : ''}` : '💬 Chatear';
+        const btnLabel = nuevos > 0 ? `💬 ${nuevos} ${nuevos > 1 ? t('notif.new_msgs') : t('notif.new_msg')}` : t('notif.chat');
         const btnStyle = nuevos > 0
           ? 'width:100%;padding:10px;background:#15803d;color:#fff;border:none;border-radius:8px;font-weight:800;cursor:pointer;box-shadow:0 0 0 3px #bbf7d0'
           : 'width:100%;padding:10px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-weight:800;cursor:pointer';
@@ -1467,7 +1476,7 @@
             </div>
           </div>
           <div style="display:flex;gap:8px">
-            <button onclick="verPerfilUsuario('${otroId}')" style="padding:10px 14px;background:#f1f5f9;color:#374151;border:none;border-radius:8px;font-weight:700;cursor:pointer">👤 Perfil</button>
+            <button onclick="verPerfilUsuario('${otroId}')" style="padding:10px 14px;background:#f1f5f9;color:#374151;border:none;border-radius:8px;font-weight:700;cursor:pointer">${t('match.profile')}</button>
             <button onclick="document.getElementById('notif-overlay').classList.remove('open'); openChat('${s.id}','${otroNombre.replace(/'/g,"\\'")}','${otroAvatar}','${otroId}');" style="flex:1;${btnStyle}">${btnLabel}</button>
           </div>
         </div>`;
@@ -1475,13 +1484,13 @@
     }
 
     if (pendientes && pendientes.length > 0) {
-      html += '<p style="font-size:0.8rem;font-weight:800;color:#374151;margin:12px 0 8px">🔔 NUEVAS SOLICITUDES</p>';
+      html += `<p style="font-size:0.8rem;font-weight:800;color:#374151;margin:12px 0 8px">${t('notif.requests')}</p>`;
       html += pendientes.map(s => `
         <div style="background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,0.08)">
-          <p style="font-weight:800;margin-bottom:4px">${s.deporte_emoji} <b>${s.from_nombre}</b> quiere ${verbDeporte(s.deporte)} contigo</p>
+          <p style="font-weight:800;margin-bottom:4px">${s.deporte_emoji} <b>${s.from_nombre}</b> ${t('misc.want_play')} ${verbDeporte(s.deporte)} ${t('misc.play_together')}</p>
           <div style="display:flex;gap:8px;margin-top:10px">
-            <button onclick="responderMatch('${s.id}','aceptado',this)" style="flex:1;padding:10px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-weight:800;cursor:pointer">✅ Aceptar</button>
-            <button onclick="responderMatch('${s.id}','rechazado',this)" style="flex:1;padding:10px;background:#f1f5f9;color:#374151;border:none;border-radius:8px;font-weight:700;cursor:pointer">✕ Rechazar</button>
+            <button onclick="responderMatch('${s.id}','aceptado',this)" style="flex:1;padding:10px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-weight:800;cursor:pointer">${t('notif.accept')}</button>
+            <button onclick="responderMatch('${s.id}','rechazado',this)" style="flex:1;padding:10px;background:#f1f5f9;color:#374151;border:none;border-radius:8px;font-weight:700;cursor:pointer">${t('notif.reject')}</button>
           </div>
         </div>`).join('');
     }
@@ -1498,17 +1507,17 @@
         .limit(5);
       if (nuevosApuntados && nuevosApuntados.length > 0) {
         const partidaMap = Object.fromEntries(misPartidas.map(p => [p.id, p]));
-        html += '<p style="font-size:0.8rem;font-weight:800;color:#374151;margin:12px 0 8px">🏟️ NUEVOS EN TUS PARTIDAS</p>';
+        html += `<p style="font-size:0.8rem;font-weight:800;color:#374151;margin:12px 0 8px">${t('notif.partidas')}</p>`;
         html += nuevosApuntados.map(a => {
           const p = partidaMap[a.partida_id];
           return `<div style="background:#fff;border-radius:12px;padding:12px 16px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,0.07)">
-            <p style="font-weight:700;margin:0">${p.deporte_emoji} <b>${escapeHtml(a.user_nombre)}</b> se apuntó a tu partida de ${p.deporte} en ${escapeHtml(p.ciudad)}</p>
+            <p style="font-weight:700;margin:0">${p.deporte_emoji} <b>${escapeHtml(a.user_nombre)}</b> ${t('notif.apuntado')} ${p.deporte} ${t('notif.en')} ${escapeHtml(p.ciudad)}</p>
           </div>`;
         }).join('');
       }
     }
 
-    if (!html) html = '<p style="color:#9ca3af;text-align:center;padding:20px">No tienes solicitudes.</p>';
+    if (!html) html = `<p style="color:#9ca3af;text-align:center;padding:20px">${t('notif.empty')}</p>`;
 
     panel.innerHTML = html;
     document.getElementById('notif-overlay').classList.add('open');
@@ -1521,8 +1530,8 @@
     btn.disabled = true;
     await sb.from('solicitudes_match').update({ estado }).eq('id', id);
     btn.closest('div[style]').innerHTML = estado === 'aceptado'
-      ? '<p style="color:#16a34a;font-weight:800;text-align:center">✅ ¡Aceptado! Pronto podrás chatear.</p>'
-      : '<p style="color:#9ca3af;text-align:center">Rechazado.</p>';
+      ? `<p style="color:#16a34a;font-weight:800;text-align:center">✅ ${t('match.confirmed')}</p>`
+      : `<p style="color:#9ca3af;text-align:center">${t('notif.reject')}</p>`;
   }
 
   /* ---------- CHAT REAL ---------- */
@@ -1584,18 +1593,18 @@
 
     const valorarBtn = yaValorado
       ? `<button disabled style="background:#f1f5f9;color:#9ca3af;border:none;border-radius:10px;padding:10px 14px;font-size:0.9rem;cursor:default">⭐ ${yaValorado.estrellas}/5</button>`
-      : `<button onclick="abrirValorar()" style="background:#fef9c3;color:#854d0e;border:1.5px solid #fde047;border-radius:10px;padding:10px 14px;font-size:0.9rem;font-weight:700;cursor:pointer">⭐ Valorar</button>`;
+      : `<button onclick="abrirValorar()" style="background:#fef9c3;color:#854d0e;border:1.5px solid #fde047;border-radius:10px;padding:10px 14px;font-size:0.9rem;font-weight:700;cursor:pointer">${t('chat.rate')}</button>`;
 
     document.getElementById('chat-modal').innerHTML = `
       <div class="chat-head">
         <div class="chat-avatar">${avatarHtml}</div>
-        <div><div class="chat-name">${escapeHtml(otherNombre)}</div><div class="chat-status">SportMatch</div></div>
+        <div><div class="chat-name">${escapeHtml(otherNombre)}</div><div class="chat-status">${t('chat.sportmatch')}</div></div>
         <button class="modal-close" style="margin-left:auto" onclick="closeChat()">✕</button>
       </div>
-      <div class="chat-body" id="chat-body"><p style="text-align:center;color:#9ca3af;padding:20px;font-size:0.9rem">Cargando…</p></div>
+      <div class="chat-body" id="chat-body"><p style="text-align:center;color:#9ca3af;padding:20px;font-size:0.9rem">${t('chat.loading')}</p></div>
       <div style="display:flex;gap:8px;padding:12px;border-top:1px solid #e2e8f0">
         ${valorarBtn}
-        <input id="chat-input" type="text" placeholder="Escribe un mensaje…"
+        <input id="chat-input" type="text" placeholder="${t('chat.placeholder')}"
           style="flex:1;border:1.5px solid #e2e8f0;border-radius:10px;padding:10px 14px;font-size:0.95rem;outline:none"
           onkeydown="if(event.key==='Enter')sendMessage()"/>
         <button onclick="sendMessage()" style="background:#16a34a;color:#fff;border:none;border-radius:10px;padding:10px 18px;font-weight:800;cursor:pointer;font-size:1.1rem">➤</button>
@@ -1610,7 +1619,7 @@
     document.getElementById('val-nombre').textContent = chatOtherNombre || '';
     document.getElementById('val-comentario').value = '';
     document.getElementById('val-btn').disabled = false;
-    document.getElementById('val-btn').textContent = 'Guardar valoración';
+    document.getElementById('val-btn').textContent = t('rate.btn');
     document.getElementById('valorar-overlay').classList.add('open');
     seleccionarEstrella(0);
   }
@@ -1628,7 +1637,7 @@
     if (!estrellas) { alert('Elige cuántas estrellas'); return; }
     const comentario = document.getElementById('val-comentario').value.trim();
     const btn = document.getElementById('val-btn');
-    btn.disabled = true; btn.textContent = 'Guardando…';
+    btn.disabled = true; btn.textContent = t('misc.save');
 
     // Obtener to_id desde la solicitud_match si no lo tenemos
     let toId = chatToId;
@@ -1659,7 +1668,7 @@
       .eq('match_id', chatMatchId)
       .order('created_at', { ascending: true });
     if (!msgs || msgs.length === 0) {
-      body.innerHTML = '<p style="text-align:center;color:#9ca3af;padding:20px;font-size:0.9rem">¡Di hola! 👋</p>';
+      body.innerHTML = `<p style="text-align:center;color:#9ca3af;padding:20px;font-size:0.9rem">${t('chat.say_hi')}</p>`;
       return;
     }
     // Marcar como leídos los mensajes del otro que aún no lo estaban
@@ -1709,6 +1718,196 @@
 
   /* ---------- AUTH ---------- */
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  /* ---------- i18n ---------- */
+  const TRANSLATIONS = {
+    es: {
+      'auth.login':'Entrar','auth.signup':'Registrarse','auth.nombre':'Tu nombre',
+      'auth.email':'Tu email','auth.pass':'Contraseña','auth.login_btn':'Entrar →',
+      'auth.signup_btn':'Crear cuenta →','auth.privacy':'Sin spam. Tus datos solo se usan para encontrar compañeros de juego.',
+      'auth.error':'Email o contraseña incorrectos','auth.confirm':'✅ ¡Cuenta creada! Te hemos enviado un email — confírmalo y vuelve aquí para entrar.',
+      'setup.title':'Cuéntanos sobre ti','setup.sub':'Solo tarda 30 segundos',
+      'setup.nombre':'Tu nombre','setup.deporte':'¿Tu deporte principal?','setup.nivel':'¿Tu nivel?',
+      'setup.ciudad':'¿En qué ciudad estás?','setup.btn':'Guardar y entrar →',
+      'nivel.1':'Principiante','nivel.2':'Intermedio','nivel.3':'Avanzado',
+      'home.title':'Elige tu deporte.<br><em>Encuentra con quién jugar.</em>',
+      'home.city':'¿En qué ciudad buscas?','home.friends':'👥 Buscar amigos en contactos','home.sports':'Deportes',
+      'sport.join':'Apuntarme →','sport.level':'Nivel','sport.distance':'Distancia','sport.any':'Cualquiera',
+      'sport.city':'¿En qué ciudad buscas?','sport.no_profiles':'No hay perfiles con estos filtros.',
+      'feed.compat':'Compatibilidad','feed.play':'Jugar','feed.play_with':'Jugar con',
+      'feed.compatible':'persona compatible','feed.compatibles':'personas compatibles','feed.swipe':'desliza ↑ ↓',
+      'notif.title':'🔔 Solicitudes','notif.matches':'💬 MIS MATCHES','notif.requests':'🔔 NUEVAS SOLICITUDES',
+      'notif.accept':'✅ Aceptar','notif.reject':'✕ Rechazar','notif.chat':'💬 Chatear',
+      'notif.new_msg':'mensaje nuevo','notif.new_msgs':'mensajes nuevos','notif.empty':'No tienes solicitudes.',
+      'notif.partidas':'🏟️ NUEVOS EN TUS PARTIDAS','notif.apuntado':'se apuntó a tu partida de','notif.en':'en',
+      'match.profile':'👤 Perfil','match.confirmed':'¡Match confirmado!',
+      'chat.placeholder':'Escribe un mensaje…','chat.say_hi':'¡Di hola! 👋','chat.rate':'⭐ Valorar',
+      'chat.loading':'Cargando…','chat.sportmatch':'SportMatch',
+      'rate.title':'⭐ Valorar partida','rate.sub':'¿Cómo fue jugar con','rate.comment':'Comentario opcional…','rate.btn':'Guardar valoración',
+      'partida.open':'🏟️ Partidas abiertas','partida.propose':'+ Proponer','partida.join':'Apuntarme',
+      'partida.leave':'✕ Desapuntarse','partida.full':'Completo','partida.mine':'✅ Tu partida',
+      'partida.empty':'No hay partidas abiertas. ¡Propón la primera!',
+      'proponer.title':'🏟️ Proponer partida','proponer.ciudad':'Ciudad','proponer.buscas':'¿Cuántos buscas?',
+      'proponer.desc':'Descripción opcional (lugar exacto, nivel buscado…)','proponer.btn':'Publicar partida',
+      'proponer.1':'1 persona más','proponer.2':'2 personas más','proponer.3':'3 personas más','proponer.4':'4 personas más',
+      'perfil.title':'👤 Mi perfil','perfil.photo':'Toca para añadir foto','perfil.save':'Guardar cambios',
+      'perfil.saved':'✅ Perfil actualizado','perfil.logout':'Cerrar sesión',
+      'contacts.btn':'👥 Buscar amigos en contactos','contacts.found':'✅ Ya están en SportMatch',
+      'contacts.view':'Ver','contacts.none':'Ninguno de los contactos seleccionados está en SportMatch aún.',
+      'contacts.no_email':'Los contactos seleccionados no tienen email guardado.',
+      'contacts.no_support':'Tu navegador no soporta acceso a contactos. Prueba desde Safari en iOS o Chrome en Android.',
+      'contacts.searching':'Buscando…','contacts.error':'No se pudo acceder a los contactos.',
+      'contacts.sports':'Deportes con jugadores en','contacts.no_city':'No hay jugadores registrados en',
+      'misc.loading':'Cargando…','misc.save':'Guardando…','misc.error':'Error al guardar.',
+      'misc.publishing':'Publicando…','misc.publish_error':'Error al publicar.',
+      'misc.want_play':'quiere','misc.play_together':'contigo',
+    },
+    en: {
+      'auth.login':'Log in','auth.signup':'Sign up','auth.nombre':'Your name',
+      'auth.email':'Your email','auth.pass':'Password','auth.login_btn':'Log in →',
+      'auth.signup_btn':'Create account →','auth.privacy':'No spam. Your data is only used to find playing partners.',
+      'auth.error':'Wrong email or password','auth.confirm':'✅ Account created! We sent you an email — confirm it and come back to log in.',
+      'setup.title':'Tell us about you','setup.sub':'Takes 30 seconds',
+      'setup.nombre':'Your name','setup.deporte':'Your main sport?','setup.nivel':'Your level?',
+      'setup.ciudad':'What city are you in?','setup.btn':'Save and continue →',
+      'nivel.1':'Beginner','nivel.2':'Intermediate','nivel.3':'Advanced',
+      'home.title':'Pick your sport.<br><em>Find someone to play with.</em>',
+      'home.city':'Which city are you looking in?','home.friends':'👥 Find friends in contacts','home.sports':'Sports',
+      'sport.join':'Join →','sport.level':'Level','sport.distance':'Distance','sport.any':'Any',
+      'sport.city':'Which city are you looking in?','sport.no_profiles':'No profiles match your filters.',
+      'feed.compat':'Compatibility','feed.play':'Play','feed.play_with':'Play with',
+      'feed.compatible':'compatible person','feed.compatibles':'compatible people','feed.swipe':'swipe ↑ ↓',
+      'notif.title':'🔔 Requests','notif.matches':'💬 MY MATCHES','notif.requests':'🔔 NEW REQUESTS',
+      'notif.accept':'✅ Accept','notif.reject':'✕ Decline','notif.chat':'💬 Chat',
+      'notif.new_msg':'new message','notif.new_msgs':'new messages','notif.empty':'No requests yet.',
+      'notif.partidas':'🏟️ NEW IN YOUR GAMES','notif.apuntado':'joined your game of','notif.en':'in',
+      'match.profile':'👤 Profile','match.confirmed':'Match confirmed!',
+      'chat.placeholder':'Write a message…','chat.say_hi':'Say hi! 👋','chat.rate':'⭐ Rate',
+      'chat.loading':'Loading…','chat.sportmatch':'SportMatch',
+      'rate.title':'⭐ Rate the game','rate.sub':'How was playing with','rate.comment':'Optional comment…','rate.btn':'Save rating',
+      'partida.open':'🏟️ Open games','partida.propose':'+ Propose','partida.join':'Join',
+      'partida.leave':'✕ Leave','partida.full':'Full','partida.mine':'✅ Your game',
+      'partida.empty':'No open games. Propose the first one!',
+      'proponer.title':'🏟️ Propose a game','proponer.ciudad':'City','proponer.buscas':'How many are you looking for?',
+      'proponer.desc':'Optional description (exact location, level wanted…)','proponer.btn':'Post game',
+      'proponer.1':'1 more person','proponer.2':'2 more people','proponer.3':'3 more people','proponer.4':'4 more people',
+      'perfil.title':'👤 My profile','perfil.photo':'Tap to add photo','perfil.save':'Save changes',
+      'perfil.saved':'✅ Profile updated','perfil.logout':'Log out',
+      'contacts.btn':'👥 Find friends in contacts','contacts.found':'✅ Already on SportMatch',
+      'contacts.view':'View','contacts.none':'None of the selected contacts are on SportMatch yet.',
+      'contacts.no_email':'Selected contacts have no email saved.',
+      'contacts.no_support':'Your browser does not support contact access. Try Safari on iOS or Chrome on Android.',
+      'contacts.searching':'Searching…','contacts.error':'Could not access contacts.',
+      'contacts.sports':'Sports with players in','contacts.no_city':'No registered players in',
+      'misc.loading':'Loading…','misc.save':'Saving…','misc.error':'Error saving.',
+      'misc.publishing':'Publishing…','misc.publish_error':'Error publishing.',
+      'misc.want_play':'wants to play','misc.play_together':'with you',
+    },
+  };
+  let lang = localStorage.getItem('sm_lang') || 'es';
+  function t(key) { return (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) || TRANSLATIONS.es[key] || key; }
+
+  function setLang(l) {
+    lang = l;
+    localStorage.setItem('sm_lang', l);
+    applyLang();
+    if (document.getElementById('notif-overlay').classList.contains('open')) loadNotifications();
+    if (current) { renderCards(); loadPartidas(current.name); }
+  }
+
+  function applyLang() {
+    const isEN = lang === 'en';
+    const btn = document.getElementById('lang-btn');
+    if (btn) btn.textContent = isEN ? '🇪🇸' : '🇬🇧';
+    const tabLogin = document.getElementById('tab-login');
+    const tabSignup = document.getElementById('tab-signup');
+    if (tabLogin) tabLogin.textContent = t('auth.login');
+    if (tabSignup) tabSignup.textContent = t('auth.signup');
+    const authNombre = document.getElementById('auth-nombre');
+    if (authNombre) authNombre.placeholder = t('auth.nombre');
+    const authEmail = document.getElementById('auth-email');
+    if (authEmail) authEmail.placeholder = t('auth.email');
+    const authPass = document.getElementById('auth-pass');
+    if (authPass) authPass.placeholder = t('auth.pass');
+    const authPrivacy = document.getElementById('auth-privacy');
+    if (authPrivacy) authPrivacy.textContent = t('auth.privacy');
+    const setupTitle = document.getElementById('setup-title');
+    if (setupTitle) setupTitle.textContent = t('setup.title');
+    const setupSub = document.getElementById('setup-sub');
+    if (setupSub) setupSub.textContent = t('setup.sub');
+    const pfNombre = document.getElementById('pf-nombre');
+    if (pfNombre) pfNombre.placeholder = t('setup.nombre');
+    const pfDeporte = document.getElementById('pf-deporte');
+    if (pfDeporte) pfDeporte.options[0].text = t('setup.deporte');
+    const pfNivel = document.getElementById('pf-nivel');
+    if (pfNivel) { pfNivel.options[0].text = t('setup.nivel'); pfNivel.options[1].text = t('nivel.1'); pfNivel.options[2].text = t('nivel.2'); pfNivel.options[3].text = t('nivel.3'); }
+    const pfCiudad = document.getElementById('pf-ciudad');
+    if (pfCiudad) pfCiudad.placeholder = t('setup.ciudad');
+    const pfBtn = document.getElementById('pf-btn');
+    if (pfBtn && !pfBtn.disabled) pfBtn.textContent = t('setup.btn');
+    const homeHero = document.getElementById('home-hero-title');
+    if (homeHero) homeHero.innerHTML = t('home.title');
+    const homeCity = document.getElementById('home-city');
+    if (homeCity) homeCity.placeholder = t('home.city');
+    const homeLabel = document.getElementById('home-sports-label');
+    if (homeLabel) homeLabel.textContent = t('home.sports');
+    const friendsBtn = document.getElementById('friends-btn');
+    if (friendsBtn) friendsBtn.textContent = t('home.friends');
+    const shCta = document.getElementById('sh-cta');
+    if (shCta) shCta.textContent = t('sport.join');
+    const citySearch = document.getElementById('city-search');
+    if (citySearch) citySearch.placeholder = t('sport.city');
+    const levelLabel = document.getElementById('level-label');
+    if (levelLabel) levelLabel.textContent = t('sport.level');
+    const distLabel = document.getElementById('dist-label');
+    if (distLabel) distLabel.textContent = t('sport.distance');
+    document.querySelectorAll('#filter-level .chip[data-lv="all"]').forEach(el => el.textContent = t('sport.any'));
+    document.querySelectorAll('#filter-level .chip[data-lv="1"]').forEach(el => el.textContent = t('nivel.1'));
+    document.querySelectorAll('#filter-level .chip[data-lv="2"]').forEach(el => el.textContent = t('nivel.2'));
+    document.querySelectorAll('#filter-level .chip[data-lv="3"]').forEach(el => el.textContent = t('nivel.3'));
+    document.querySelectorAll('#filter-dist .chip[data-km="9999"]').forEach(el => el.textContent = t('sport.any'));
+    const partidasTitle = document.getElementById('partidas-title');
+    if (partidasTitle) partidasTitle.textContent = t('partida.open');
+    const partidasBtn = document.getElementById('partidas-propose-btn');
+    if (partidasBtn) partidasBtn.textContent = t('partida.propose');
+    const notifTitle = document.getElementById('notif-title');
+    if (notifTitle) notifTitle.textContent = t('notif.title');
+    const perfilTitle = document.getElementById('perfil-title');
+    if (perfilTitle) perfilTitle.textContent = t('perfil.title');
+    const perfilSaveBtn = document.getElementById('perfil-save-btn');
+    if (perfilSaveBtn && !perfilSaveBtn.disabled) perfilSaveBtn.textContent = t('perfil.save');
+    const perfilLogout = document.getElementById('perfil-logout-btn');
+    if (perfilLogout) perfilLogout.textContent = t('perfil.logout');
+    const perfilPhoto = document.getElementById('perfil-photo-label');
+    if (perfilPhoto) perfilPhoto.textContent = t('perfil.photo');
+    const epDeporte = document.getElementById('ep-deporte');
+    if (epDeporte) epDeporte.options[0].text = t('setup.deporte');
+    const epNivel = document.getElementById('ep-nivel');
+    if (epNivel) { epNivel.options[0].text = t('setup.nivel'); epNivel.options[1].text = t('nivel.1'); epNivel.options[2].text = t('nivel.2'); epNivel.options[3].text = t('nivel.3'); }
+    const epNombre = document.getElementById('ep-nombre');
+    if (epNombre) epNombre.placeholder = t('setup.nombre');
+    const epCiudad = document.getElementById('ep-ciudad');
+    if (epCiudad) epCiudad.placeholder = t('setup.ciudad');
+    const proponerTitle = document.getElementById('proponer-title');
+    if (proponerTitle) proponerTitle.textContent = t('proponer.title');
+    const ppCiudad = document.getElementById('pp-ciudad');
+    if (ppCiudad) ppCiudad.placeholder = t('proponer.ciudad');
+    const ppPlazas = document.getElementById('pp-plazas');
+    if (ppPlazas) { ppPlazas.options[0].text = t('proponer.buscas'); ppPlazas.options[1].text = t('proponer.1'); ppPlazas.options[2].text = t('proponer.2'); ppPlazas.options[3].text = t('proponer.3'); ppPlazas.options[4].text = t('proponer.4'); }
+    const ppDesc = document.getElementById('pp-descripcion');
+    if (ppDesc) ppDesc.placeholder = t('proponer.desc');
+    const ppBtn = document.getElementById('pp-btn');
+    if (ppBtn && !ppBtn.disabled) ppBtn.textContent = t('proponer.btn');
+    const rateTitle = document.getElementById('rate-title');
+    if (rateTitle) rateTitle.textContent = t('rate.title');
+    const rateSub = document.getElementById('rate-sub');
+    if (rateSub) rateSub.textContent = t('rate.sub');
+    const rateComment = document.getElementById('val-comentario');
+    if (rateComment) rateComment.placeholder = t('rate.comment');
+    const rateBtn = document.getElementById('val-btn');
+    if (rateBtn && !rateBtn.disabled) rateBtn.textContent = t('rate.btn');
+  }
+
   let currentUser = null;
   let authMode = 'login';
 
@@ -1716,7 +1915,7 @@
     authMode = mode;
     const isSignup = mode === 'signup';
     document.getElementById('auth-nombre').style.display = isSignup ? 'block' : 'none';
-    document.getElementById('auth-btn').textContent = isSignup ? 'Crear cuenta →' : 'Entrar →';
+    document.getElementById('auth-btn').textContent = isSignup ? t('auth.signup_btn') : t('auth.login_btn');
     document.getElementById('tab-login').style.background = isSignup ? '#fff' : 'var(--accent)';
     document.getElementById('tab-login').style.color = isSignup ? '#374151' : '#fff';
     document.getElementById('tab-login').style.border = isSignup ? '1.5px solid #e2e8f0' : 'none';
@@ -1739,12 +1938,12 @@
 
     if (authMode === 'signup') {
       const { data, error } = await sb.auth.signUp({ email, password: pass });
-      if (error) { msg.textContent = error.message; btn.disabled = false; btn.textContent = 'Crear cuenta →'; return; }
+      if (error) { msg.textContent = error.message; btn.disabled = false; btn.textContent = t('auth.signup_btn'); return; }
       if (data.user) {
         await sb.from('profiles').upsert({ id: data.user.id, nombre: nombre || email.split('@')[0], deporte: null, nivel: null, ciudad: null });
         msg.style.color = '#16a34a';
-        msg.textContent = '✅ ¡Cuenta creada! Te hemos enviado un email — confírmalo y vuelve aquí para entrar.';
-        btn.textContent = 'Crear cuenta →'; btn.disabled = false;
+        msg.textContent = t('auth.confirm');
+        btn.textContent = t('auth.signup_btn'); btn.disabled = false;
         document.getElementById('auth-email').value = '';
         document.getElementById('auth-pass').value = '';
         document.getElementById('auth-nombre').value = '';
@@ -1752,7 +1951,7 @@
       }
     } else {
       const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
-      if (error) { msg.textContent = 'Email o contraseña incorrectos'; btn.disabled = false; btn.textContent = 'Entrar →'; return; }
+      if (error) { msg.textContent = t('auth.error'); btn.disabled = false; btn.textContent = t('auth.login_btn'); return; }
       currentUser = data.user;
       document.getElementById('auth-screen').classList.remove('show');
       document.getElementById('perfil-btn').style.display = 'inline-block';
@@ -1774,7 +1973,7 @@
       nivel: parseInt(document.getElementById('pf-nivel').value),
       ciudad: document.getElementById('pf-ciudad').value.trim(),
     });
-    if (error) { msg.textContent = 'Error al guardar. Inténtalo de nuevo.'; btn.disabled = false; btn.textContent = 'Guardar y entrar →'; return; }
+    if (error) { msg.textContent = t('misc.error'); btn.disabled = false; btn.textContent = t('setup.btn'); return; }
     document.getElementById('profile-setup').classList.remove('show');
   });
 
@@ -1816,7 +2015,7 @@
     e.preventDefault();
     const btn = e.target.querySelector('button[type=submit]');
     const msg = document.getElementById('ep-msg');
-    btn.disabled = true; btn.textContent = 'Guardando…';
+    btn.disabled = true; btn.textContent = t('misc.save');
 
     let avatar_url = null;
     const fotoInput = document.getElementById('ep-foto');
@@ -1840,9 +2039,9 @@
     if (avatar_url) updates.avatar_url = avatar_url;
 
     const { error } = await sb.from('profiles').update(updates).eq('id', currentUser.id);
-    btn.disabled = false; btn.textContent = 'Guardar cambios';
-    if (error) { msg.style.color = '#ef4444'; msg.textContent = 'Error al guardar.'; return; }
-    msg.style.color = '#16a34a'; msg.textContent = '✅ Perfil actualizado';
+    btn.disabled = false; btn.textContent = t('perfil.save');
+    if (error) { msg.style.color = '#ef4444'; msg.textContent = t('misc.error'); return; }
+    msg.style.color = '#16a34a'; msg.textContent = t('perfil.saved');
     setTimeout(closePerfil, 1200);
   });
 
@@ -1873,6 +2072,7 @@
       document.getElementById('auth-screen').classList.add('show');
     }
     renderHome();
+    applyLang();
   })();
   const VAPID_PUBLIC = 'BBjkw6FzxpbslBpR0K3c-TJBqqsMmO_KoP-WLUwoyiJMD1vJPyfHYGXdkLPtChfZrxQHO9vMYG8yyHvswn_5Gro';
 
@@ -1919,7 +2119,7 @@
     document.getElementById('pp-descripcion').value = '';
     document.getElementById('pp-msg').textContent = '';
     document.getElementById('pp-btn').disabled = false;
-    document.getElementById('pp-btn').textContent = 'Publicar partida';
+    document.getElementById('pp-btn').textContent = t('proponer.btn');
     document.getElementById('proponer-overlay').classList.add('open');
   }
 
@@ -1928,7 +2128,7 @@
     if (!currentUser) return;
     const btn = document.getElementById('pp-btn');
     const msg = document.getElementById('pp-msg');
-    btn.disabled = true; btn.textContent = 'Publicando…';
+    btn.disabled = true; btn.textContent = t('misc.publishing');
 
     const { data: perfil } = await sb.from('profiles').select('nombre').eq('id', currentUser.id).single();
     const { error } = await sb.from('partidas').insert({
@@ -1943,7 +2143,7 @@
       descripcion: document.getElementById('pp-descripcion').value.trim() || null,
     });
 
-    if (error) { msg.textContent = 'Error al publicar.'; btn.disabled = false; btn.textContent = 'Publicar partida'; return; }
+    if (error) { msg.textContent = t('misc.publish_error'); btn.disabled = false; btn.textContent = t('proponer.btn'); return; }
     document.getElementById('proponer-overlay').classList.remove('open');
     await loadPartidas(current.name);
   });
@@ -1962,7 +2162,7 @@
       .limit(10);
 
     if (!partidas || partidas.length === 0) {
-      el.innerHTML = '<p style="color:#9ca3af;font-size:0.9rem;text-align:center;padding:16px 0">No hay partidas abiertas. ¡Propón la primera!</p>';
+      el.innerHTML = `<p style="color:#9ca3af;font-size:0.9rem;text-align:center;padding:16px 0">${t('partida.empty')}</p>`;
       return;
     }
 
@@ -1986,13 +2186,13 @@
 
       let btnHtml = '';
       if (esMio) {
-        btnHtml = `<span style="font-size:0.8rem;color:#16a34a;font-weight:700">✅ Tu partida</span>`;
+        btnHtml = `<span style="font-size:0.8rem;color:#16a34a;font-weight:700">${t('partida.mine')}</span>`;
       } else if (yoApuntado) {
-        btnHtml = `<button onclick="desapuntarsePartida('${p.id}')" style="padding:8px 14px;background:#f1f5f9;color:#374151;border:none;border-radius:8px;font-size:0.85rem;font-weight:700;cursor:pointer">✕ Desapuntarse</button>`;
+        btnHtml = `<button onclick="desapuntarsePartida('${p.id}')" style="padding:8px 14px;background:#f1f5f9;color:#374151;border:none;border-radius:8px;font-size:0.85rem;font-weight:700;cursor:pointer">${t('partida.leave')}</button>`;
       } else if (lleno) {
-        btnHtml = `<span style="font-size:0.8rem;color:#9ca3af;font-weight:700">Completo</span>`;
+        btnHtml = `<span style="font-size:0.8rem;color:#9ca3af;font-weight:700">${t('partida.full')}</span>`;
       } else {
-        btnHtml = `<button onclick="apuntarsePartida('${p.id}')" style="padding:8px 14px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer">Apuntarme</button>`;
+        btnHtml = `<button onclick="apuntarsePartida('${p.id}')" style="padding:8px 14px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer">${t('partida.join')}</button>`;
       }
 
       return `
