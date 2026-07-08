@@ -1935,29 +1935,36 @@
     const msg = document.getElementById('auth-msg');
     btn.disabled = true;
     btn.textContent = '…';
+    msg.style.color = '#ef4444';
     msg.textContent = '';
 
-    if (authMode === 'signup') {
-      const { data, error } = await sb.auth.signUp({ email, password: pass });
-      if (error) { msg.textContent = error.message; btn.disabled = false; btn.textContent = t('auth.signup_btn'); return; }
-      if (data.user) {
-        await sb.from('profiles').upsert({ id: data.user.id, nombre: nombre || email.split('@')[0], deporte: null, nivel: null, ciudad: null });
-        msg.style.color = '#16a34a';
-        msg.textContent = t('auth.confirm');
-        btn.textContent = t('auth.signup_btn'); btn.disabled = false;
-        document.getElementById('auth-email').value = '';
-        document.getElementById('auth-pass').value = '';
-        document.getElementById('auth-nombre').value = '';
-        authTab('login');
+    try {
+      if (authMode === 'signup') {
+        const { data, error } = await sb.auth.signUp({ email, password: pass });
+        if (error) { msg.textContent = error.message; return; }
+        if (data.user) {
+          await sb.from('profiles').upsert({ id: data.user.id, nombre: nombre || email.split('@')[0], deporte: null, nivel: null, ciudad: null });
+          msg.style.color = '#16a34a';
+          msg.textContent = t('auth.confirm');
+          document.getElementById('auth-email').value = '';
+          document.getElementById('auth-pass').value = '';
+          document.getElementById('auth-nombre').value = '';
+          authTab('login');
+        }
+      } else {
+        const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+        if (error) { msg.textContent = t('auth.error'); return; }
+        currentUser = data.user;
+        document.getElementById('auth-screen').classList.remove('show');
+        document.getElementById('perfil-btn').style.display = 'inline-block';
+        checkProfile(currentUser);
+        loadNotifications();
       }
-    } else {
-      const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
-      if (error) { msg.textContent = t('auth.error'); btn.disabled = false; btn.textContent = t('auth.login_btn'); return; }
-      currentUser = data.user;
-      document.getElementById('auth-screen').classList.remove('show');
-      document.getElementById('perfil-btn').style.display = 'inline-block';
-      await checkProfile(currentUser);
-      await loadNotifications();
+    } catch (err) {
+      msg.textContent = 'Error: ' + (err.message || err);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = authMode === 'signup' ? t('auth.signup_btn') : t('auth.login_btn');
     }
   });
 
