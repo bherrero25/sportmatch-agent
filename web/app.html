@@ -490,7 +490,7 @@
   </div>
 
   <footer>
-    SportMatch · Beta v26 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
+    SportMatch · Beta v27 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
   </footer>
 </div>
 
@@ -1576,8 +1576,8 @@
 
     if (!html) html = `<p style="color:#9ca3af;text-align:center;padding:20px">${t('notif.empty')}</p>`;
 
-    // Botón para activar push si OneSignal está configurado y aún no hay permiso
-    if (ONESIGNAL_APP_ID && 'Notification' in window && Notification.permission !== 'granted') {
+    // Botón para activar/comprobar push (visible siempre que OneSignal esté configurado)
+    if (ONESIGNAL_APP_ID && 'Notification' in window) {
       html += `<div style="margin-top:16px;padding:14px;background:#f8fafc;border-radius:12px;border:1.5px dashed #e2e8f0;text-align:center">
         <p style="font-size:0.85rem;color:#6b7280;margin-bottom:10px">${t('notif.push_hint')}</p>
         <button onclick="activarNotificaciones()" style="background:#16a34a;color:#fff;border:none;padding:10px 20px;border-radius:8px;font-weight:800;cursor:pointer">${t('notif.push_btn')}</button>
