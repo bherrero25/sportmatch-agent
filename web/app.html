@@ -663,6 +663,25 @@
 
   const SPORT_BY_KEY = Object.fromEntries(SPORTS.map(s => [s.key, s]));
 
+  // Nombres y taglines en inglés (el resto de datos se comparte)
+  const SPORT_EN = {
+    golf: ['Golf', 'Green partners by handicap, pace and language.'],
+    padel: ['Padel', 'Find your padel partner by level and schedule.'],
+    tenis: ['Tennis', 'Singles or doubles partners at your level.'],
+    running: ['Running', 'Running mates at your pace, wherever you are.'],
+    senderismo: ['Hiking', 'Hiking buddies for trails near you.'],
+    esqui: ['Skiing', 'Ski partners on and off piste.'],
+    escalada: ['Climbing', 'Climbing partners for wall and rock.'],
+    baloncesto: ['Basketball', 'Pick-up games and players near you.'],
+    futbol: ['Football', 'Players and matches near you.'],
+    ciclismo: ['Cycling', 'Ride partners by pace and distance.'],
+    surf: ['Surfing', 'Surf buddies wherever the waves are.'],
+    submarinismo: ['Scuba diving', 'Dive buddies wherever you travel.'],
+    pilota: ['Valencian pilota', 'The traditional Valencian sport, with anyone up for it.'],
+  };
+  function sportName(s) { return lang === 'en' && SPORT_EN[s.key] ? SPORT_EN[s.key][0] : s.name; }
+  function sportTagline(s) { return lang === 'en' && SPORT_EN[s.key] ? SPORT_EN[s.key][1] : s.tagline; }
+
   // Perfiles extra (con avatar, sin foto) para tener baraja con la que deslizar.
   // [nombre, edad, ubicación, nivel(1-3), km, tags, bio]
   const EXTRA = {
@@ -743,8 +762,8 @@
         <span class="go">→</span>
         <span class="emoji">${s.emoji}</span>
         <div>
-          <div class="nm" style="color:#fff">${s.name}</div>
-          <div class="sub">${s.profiles.length} disponibles · ${s.tagline.split(' ').slice(0,4).join(' ')}…</div>
+          <div class="nm" style="color:#fff">${sportName(s)}</div>
+          <div class="sub">${s.profiles.length} ${t('misc.available')} · ${sportTagline(s).split(' ').slice(0,4).join(' ')}…</div>
         </div>
       </button>`).join('');
   }
@@ -768,8 +787,8 @@
     current = SPORT_BY_KEY[key];
     applyTheme(current);
     document.getElementById('sh-emoji').textContent = current.emoji;
-    document.getElementById('sh-name').textContent = current.name;
-    document.getElementById('sh-tagline').textContent = current.tagline;
+    document.getElementById('sh-name').textContent = sportName(current);
+    document.getElementById('sh-tagline').textContent = sportTagline(current);
     document.getElementById('topbar').classList.add('in-sport');
     filterLv = 'all'; filterKm = 100;
     resetChips();
@@ -887,7 +906,8 @@
   async function buscarAmigos() {
     const el = document.getElementById('amigos-result');
     if (!('contacts' in navigator)) {
-      el.innerHTML = `<p style="color:#9ca3af;font-size:0.85rem;padding:8px 18px">${t('contacts.no_support')}</p>`;
+      // iOS Safari no soporta Contact Picker — plan B: buscar por email + invitar
+      mostrarBuscadorEmail();
       return;
     }
     try {
@@ -938,6 +958,61 @@
       el.innerHTML = html;
     } catch (e) {
       el.innerHTML = `<p style="color:#9ca3af;font-size:0.85rem;padding:8px 18px">${t('contacts.error')}</p>`;
+    }
+  }
+
+  function mostrarBuscadorEmail() {
+    const el = document.getElementById('amigos-result');
+    el.innerHTML = `
+      <div style="padding:8px 18px 12px">
+        <p style="font-size:0.85rem;color:#6b7280;margin-bottom:8px">${t('contacts.email_hint')}</p>
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <input id="amigo-email" type="email" placeholder="email@ejemplo.com" style="flex:1;padding:11px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:0.95rem;outline:none"
+            onkeydown="if(event.key==='Enter')buscarAmigoPorEmail()" />
+          <button onclick="buscarAmigoPorEmail()" style="background:#16a34a;color:#fff;border:none;border-radius:10px;padding:11px 16px;font-weight:800;cursor:pointer;flex-shrink:0">🔍</button>
+        </div>
+        <div id="amigo-email-result"></div>
+        <button onclick="invitarAmigos()" style="width:100%;background:#fff;border:1.5px solid #16a34a;color:#16a34a;border-radius:10px;padding:11px;font-size:0.9rem;font-weight:800;cursor:pointer">${t('contacts.invite')}</button>
+      </div>`;
+  }
+
+  async function buscarAmigoPorEmail() {
+    const email = document.getElementById('amigo-email').value.trim().toLowerCase();
+    const res = document.getElementById('amigo-email-result');
+    if (!email) return;
+    res.innerHTML = `<p style="color:#9ca3af;font-size:0.85rem;padding:4px 0">${t('contacts.searching')}</p>`;
+    const { data: p } = await sb.from('profiles')
+      .select('id,nombre,deporte,ciudad,avatar_url')
+      .eq('email', email)
+      .neq('id', currentUser ? currentUser.id : '')
+      .maybeSingle();
+    if (!p) {
+      res.innerHTML = `<p style="color:#9ca3af;font-size:0.9rem;padding:4px 0 10px">${t('contacts.not_found')}</p>`;
+      return;
+    }
+    const avatarHtml = p.avatar_url
+      ? `<img src="${p.avatar_url}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0"/>`
+      : `<div style="width:44px;height:44px;border-radius:50%;background:#16a34a;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem;flex-shrink:0">${escapeHtml((p.nombre||'?').charAt(0).toUpperCase())}</div>`;
+    res.innerHTML = `<div style="display:flex;align-items:center;gap:12px;background:#f0fdf4;border-radius:12px;padding:12px;margin-bottom:10px;border:1.5px solid #bbf7d0">
+      ${avatarHtml}
+      <div style="flex:1">
+        <p style="font-weight:800;margin:0">${escapeHtml(p.nombre||'Deportista')}</p>
+        <p style="color:#6b7280;font-size:0.85rem;margin:2px 0 0">${p.deporte||''} · ${p.ciudad||''}</p>
+      </div>
+      <button onclick="verPerfilUsuario('${p.id}')" style="background:#16a34a;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:0.85rem;font-weight:800;cursor:pointer">${t('contacts.view')}</button>
+    </div>`;
+  }
+
+  async function invitarAmigos() {
+    const texto = t('contacts.invite_text');
+    const url = 'https://sportmatchapp.es';
+    if (navigator.share) {
+      try { await navigator.share({ title: 'SportMatch', text: texto, url }); } catch (_) {}
+    } else {
+      try {
+        await navigator.clipboard.writeText(texto + ' ' + url);
+        alert(t('contacts.copied'));
+      } catch (_) {}
     }
   }
 
@@ -1007,7 +1082,7 @@
     return `<div class="feed-card">
       ${media}
       <div class="feed-shade"></div>
-      <span class="sport-badge2">${current.emoji} ${current.name}</span>
+      <span class="sport-badge2">${current.emoji} ${sportName(current)}</span>
       <span class="compat">${compat}% match</span>
       <div class="feed-info">
         <div class="feed-name">${p.name}${p.rating ? ` · ⭐ ${p.rating}` : ''}</div>
@@ -1757,8 +1832,12 @@
       'contacts.no_email':'Los contactos seleccionados no tienen email guardado.',
       'contacts.no_support':'Tu navegador no soporta acceso a contactos. Prueba desde Safari en iOS o Chrome en Android.',
       'contacts.searching':'Buscando…','contacts.error':'No se pudo acceder a los contactos.',
+      'contacts.email_hint':'Busca a un amigo por su email o invítale a SportMatch:',
+      'contacts.invite':'📣 Invitar amigos','contacts.not_found':'No está en SportMatch todavía. ¡Invítale!',
+      'contacts.invite_text':'¡Únete a SportMatch y encontremos con quién jugar!','contacts.copied':'Enlace copiado. ¡Pégalo donde quieras!',
       'contacts.sports':'Deportes con jugadores en','contacts.no_city':'No hay jugadores registrados en',
-      'misc.loading':'Cargando…','misc.save':'Guardando…','misc.error':'Error al guardar.',
+      'misc.available':'disponibles',
+    'misc.loading':'Cargando…','misc.save':'Guardando…','misc.error':'Error al guardar.',
       'misc.publishing':'Publicando…','misc.publish_error':'Error al publicar.',
       'misc.want_play':'quiere','misc.play_together':'contigo',
     },
@@ -1798,8 +1877,12 @@
       'contacts.no_email':'Selected contacts have no email saved.',
       'contacts.no_support':'Your browser does not support contact access. Try Safari on iOS or Chrome on Android.',
       'contacts.searching':'Searching…','contacts.error':'Could not access contacts.',
+      'contacts.email_hint':'Find a friend by email or invite them to SportMatch:',
+      'contacts.invite':'📣 Invite friends','contacts.not_found':'Not on SportMatch yet. Invite them!',
+      'contacts.invite_text':'Join SportMatch and let\'s find someone to play with!','contacts.copied':'Link copied. Paste it anywhere!',
       'contacts.sports':'Sports with players in','contacts.no_city':'No registered players in',
-      'misc.loading':'Loading…','misc.save':'Saving…','misc.error':'Error saving.',
+      'misc.available':'available',
+    'misc.loading':'Loading…','misc.save':'Saving…','misc.error':'Error saving.',
       'misc.publishing':'Publishing…','misc.publish_error':'Error publishing.',
       'misc.want_play':'wants to play','misc.play_together':'with you',
     },
@@ -1813,7 +1896,12 @@
     applyLang();
     renderHome();
     if (document.getElementById('notif-overlay').classList.contains('open')) loadNotifications();
-    if (current) { renderCards(); loadPartidas(current.name); }
+    if (current) {
+      document.getElementById('sh-name').textContent = sportName(current);
+      document.getElementById('sh-tagline').textContent = sportTagline(current);
+      renderCards();
+      loadPartidas(current.name);
+    }
   }
 
   function applyLang() {
@@ -1840,6 +1928,15 @@
     if (pfNombre) pfNombre.placeholder = t('setup.nombre');
     const pfDeporte = document.getElementById('pf-deporte');
     if (pfDeporte) pfDeporte.options[0].text = t('setup.deporte');
+    // Nombres de deportes traducidos en los selectores
+    ['pf-deporte', 'ep-deporte'].forEach(id => {
+      const sel = document.getElementById(id);
+      if (!sel) return;
+      for (const opt of sel.options) {
+        const s = opt.value && SPORT_BY_KEY[opt.value];
+        if (s) opt.text = `${s.emoji} ${sportName(s)}`;
+      }
+    });
     const pfNivel = document.getElementById('pf-nivel');
     if (pfNivel) { pfNivel.options[0].text = t('setup.nivel'); pfNivel.options[1].text = t('nivel.1'); pfNivel.options[2].text = t('nivel.2'); pfNivel.options[3].text = t('nivel.3'); }
     const pfCiudad = document.getElementById('pf-ciudad');
