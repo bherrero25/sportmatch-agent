@@ -489,7 +489,7 @@
   </div>
 
   <footer>
-    SportMatch · Beta v15 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
+    SportMatch · Beta v16 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
   </footer>
 </div>
 
@@ -1895,7 +1895,7 @@
       'chat.loading':'Cargando…','chat.sportmatch':'SportMatch',
       'rate.title':'⭐ Valorar partida','rate.sub':'¿Cómo fue jugar con','rate.comment':'Comentario opcional…','rate.btn':'Guardar valoración',
       'partida.open':'🏟️ Partidas abiertas','partida.propose':'+ Proponer','partida.join':'Apuntarme',
-      'partida.leave':'✕ Desapuntarse','partida.full':'Completo','partida.mine':'✅ Tu partida',
+      'partida.leave':'✕ Desapuntarse','partida.full':'⛔ Partida cerrada','partida.mine':'✅ Tu partida',
       'partida.empty':'No hay partidas abiertas. ¡Propón la primera!',
       'proponer.title':'🏟️ Proponer partida','proponer.ciudad':'Ciudad','proponer.buscas':'¿Cuántos buscas?',
       'proponer.desc':'Descripción opcional (lugar exacto, nivel buscado…)','proponer.btn':'Publicar partida',
@@ -1943,7 +1943,7 @@
       'chat.loading':'Loading…','chat.sportmatch':'SportMatch',
       'rate.title':'⭐ Rate the game','rate.sub':'How was playing with','rate.comment':'Optional comment…','rate.btn':'Save rating',
       'partida.open':'🏟️ Open games','partida.propose':'+ Propose','partida.join':'Join',
-      'partida.leave':'✕ Leave','partida.full':'Full','partida.mine':'✅ Your game',
+      'partida.leave':'✕ Leave','partida.full':'⛔ Game closed','partida.mine':'✅ Your game',
       'partida.empty':'No open games. Propose the first one!',
       'proponer.title':'🏟️ Propose a game','proponer.ciudad':'City','proponer.buscas':'How many are you looking for?',
       'proponer.desc':'Optional description (exact location, level wanted…)','proponer.btn':'Post game',
@@ -2306,8 +2306,28 @@
   }
 
   /* ---------- PARTIDAS ---------- */
+  // Máximo de jugadores por deporte (contando al creador)
+  function maxJugadores(key) {
+    if (key === 'padel' || key === 'golf') return 4;
+    if (key === 'futbol' || key === 'baloncesto') return 10;
+    return 5;
+  }
+
   function abrirProponerPartida() {
     if (!currentUser) return;
+    // Título con el deporte para que quede claro
+    document.getElementById('proponer-title').textContent = `${t('proponer.title')} — ${current.emoji} ${sportName(current)}`;
+    // Opciones de plazas según el deporte (pádel/golf: partida de 4 máximo)
+    const max = maxJugadores(current.key) - 1; // menos el creador
+    const sel = document.getElementById('pp-plazas');
+    sel.innerHTML = `<option value="">${t('proponer.buscas')}</option>` +
+      Array.from({ length: max }, (_, i) => {
+        const n = i + 1;
+        const label = lang === 'en'
+          ? `${n} more ${n === 1 ? 'person' : 'people'}`
+          : `${n} persona${n > 1 ? 's' : ''} más`;
+        return `<option value="${n}">${label}</option>`;
+      }).join('');
     document.getElementById('pp-ciudad').value = '';
     document.getElementById('pp-fecha').value = '';
     document.getElementById('pp-hora').value = '';
@@ -2391,14 +2411,16 @@
         btnHtml = `<button onclick="apuntarsePartida('${p.id}')" style="padding:8px 14px;background:#16a34a;color:#fff;border:none;border-radius:8px;font-size:0.85rem;font-weight:800;cursor:pointer">${t('partida.join')}</button>`;
       }
 
+      const sObj = SPORTS.find(x => x.name === p.deporte);
+      const deporteNombre = sObj ? sportName(sObj) : p.deporte;
       return `
-      <div style="background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,0.07);border:1.5px solid #e2e8f0">
+      <div style="background:#fff;border-radius:14px;padding:14px 16px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,0.07);border:1.5px solid ${lleno ? '#fecaca' : '#e2e8f0'}">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
           <div>
-            <p style="font-weight:800;font-size:1rem;margin:0">${p.deporte_emoji} ${p.ciudad}</p>
+            <p style="font-weight:800;font-size:1rem;margin:0">${p.deporte_emoji} ${deporteNombre} · ${escapeHtml(p.ciudad)}</p>
             <p style="color:#6b7280;font-size:0.85rem;margin:2px 0 0">📅 ${fecha} · ⏰ ${hora}</p>
           </div>
-          <span style="background:#f0fdf4;color:#16a34a;font-size:0.8rem;font-weight:800;padding:4px 10px;border-radius:99px">${lista.length + 1}/${p.plazas + 1}</span>
+          <span style="background:${lleno ? '#fef2f2' : '#f0fdf4'};color:${lleno ? '#dc2626' : '#16a34a'};font-size:0.8rem;font-weight:800;padding:4px 10px;border-radius:99px">${lista.length + 1}/${p.plazas + 1}</span>
         </div>
         ${p.descripcion ? `<p style="color:#374151;font-size:0.88rem;margin:6px 0">${escapeHtml(p.descripcion)}</p>` : ''}
         <p style="color:#9ca3af;font-size:0.8rem;margin:6px 0 10px">👥 ${escapeHtml(nombres)}</p>
@@ -2409,6 +2431,15 @@
 
   async function apuntarsePartida(partidaId) {
     if (!currentUser) return;
+    // Comprobar que sigue habiendo hueco (otro puede haberse apuntado a la vez)
+    const [{ data: pInfo }, { count: yaApuntados }] = await Promise.all([
+      sb.from('partidas').select('plazas').eq('id', partidaId).single(),
+      sb.from('partida_apuntados').select('id', { count: 'exact', head: true }).eq('partida_id', partidaId),
+    ]);
+    if (pInfo && yaApuntados >= pInfo.plazas) {
+      await loadPartidas(current.name);
+      return;
+    }
     const { data: perfil } = await sb.from('profiles').select('nombre').eq('id', currentUser.id).single();
     await sb.from('partida_apuntados').insert({
       partida_id: partidaId,
