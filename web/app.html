@@ -417,6 +417,10 @@
         <button id="home-city-clear" onclick="clearHomeCity()" style="display:none;border:none;background:none;font-size:1rem;cursor:pointer;color:#9ca3af">✕</button>
       </div>
     </div>
+    <div style="padding:8px 18px 0;display:flex;gap:8px" id="amigos-btn-wrap">
+      <button onclick="buscarAmigos()" style="flex:1;background:#f0fdf4;border:1.5px solid #bbf7d0;color:#16a34a;border-radius:12px;padding:12px;font-size:0.9rem;font-weight:800;cursor:pointer">👥 Buscar amigos en contactos</button>
+    </div>
+    <div id="amigos-result"></div>
     <div class="section-label">Deportes</div>
     <div class="sport-grid" id="sport-grid"></div>
   </div>
@@ -868,6 +872,63 @@
     } else {
       const el = document.getElementById('home-sports-ciudad');
       if (el) el.remove();
+    }
+  }
+
+  async function buscarAmigos() {
+    const el = document.getElementById('amigos-result');
+    if (!('contacts' in navigator && 'ContactsManager' in window)) {
+      el.innerHTML = '<p style="color:#9ca3af;font-size:0.85rem;padding:8px 18px">Tu navegador no soporta acceso a contactos. Prueba desde Safari en iOS o Chrome en Android.</p>';
+      return;
+    }
+    try {
+      const contactos = await navigator.contacts.select(['name', 'email', 'tel'], { multiple: true });
+      if (!contactos || contactos.length === 0) { el.innerHTML = ''; return; }
+
+      // Recoger todos los emails de los contactos seleccionados
+      const emails = [...new Set(contactos.flatMap(c => c.email || []).map(e => e.toLowerCase()))];
+
+      el.innerHTML = '<p style="color:#9ca3af;font-size:0.85rem;padding:8px 18px">Buscando…</p>';
+
+      if (emails.length === 0) {
+        el.innerHTML = '<p style="color:#9ca3af;font-size:0.85rem;padding:8px 18px">Los contactos seleccionados no tienen email guardado.</p>';
+        return;
+      }
+
+      const { data: encontrados } = await sb.from('profiles')
+        .select('id,nombre,deporte,nivel,ciudad,avatar_url')
+        .in('email', emails)
+        .neq('id', currentUser.id);
+
+      const emailsEncontrados = new Set((encontrados || []).map(p => p.email));
+      const noRegistrados = contactos.filter(c => (c.email || []).some(e => !emailsEncontrados.has(e.toLowerCase())));
+
+      let html = '<div style="padding:0 18px 12px">';
+      if (encontrados && encontrados.length > 0) {
+        html += `<p style="font-size:0.75rem;font-weight:800;color:#16a34a;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">✅ Ya están en SportMatch</p>`;
+        html += encontrados.map(p => {
+          const avatarHtml = p.avatar_url
+            ? `<img src="${p.avatar_url}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0"/>`
+            : `<div style="width:44px;height:44px;border-radius:50%;background:#16a34a;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem;flex-shrink:0">${escapeHtml((p.nombre||'?').charAt(0).toUpperCase())}</div>`;
+          return `<div style="display:flex;align-items:center;gap:12px;background:#f0fdf4;border-radius:12px;padding:12px;margin-bottom:8px;border:1.5px solid #bbf7d0">
+            ${avatarHtml}
+            <div style="flex:1">
+              <p style="font-weight:800;margin:0">${escapeHtml(p.nombre||'Deportista')}</p>
+              <p style="color:#6b7280;font-size:0.85rem;margin:2px 0 0">${p.deporte||''} · ${p.ciudad||''}</p>
+            </div>
+            <button onclick="verPerfilUsuario('${p.id}')" style="background:#16a34a;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:0.85rem;font-weight:800;cursor:pointer">Ver</button>
+          </div>`;
+        }).join('');
+      }
+
+      if (encontrados && encontrados.length === 0) {
+        html += '<p style="color:#9ca3af;font-size:0.9rem;padding:8px 0">Ninguno de los contactos seleccionados está en SportMatch aún.</p>';
+      }
+
+      html += '</div>';
+      el.innerHTML = html;
+    } catch (e) {
+      el.innerHTML = '<p style="color:#9ca3af;font-size:0.85rem;padding:8px 18px">No se pudo acceder a los contactos.</p>';
     }
   }
 
