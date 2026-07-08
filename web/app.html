@@ -1779,16 +1779,6 @@
     input.value = '';
     input.focus();
 
-    // ¿Avisar por email? Solo si es el primer mensaje o el otro lleva >30 min sin actividad
-    const { data: ultimos } = await sb.from('mensajes')
-      .select('from_id,created_at')
-      .eq('match_id', chatMatchId)
-      .order('created_at', { ascending: false })
-      .limit(1);
-    const ultimo = ultimos && ultimos[0];
-    const haceMedia = ultimo && (Date.now() - new Date(ultimo.created_at).getTime()) > 30 * 60 * 1000;
-    const avisar = !ultimo || haceMedia;
-
     const { data: myProfile } = await sb.from('profiles').select('nombre').eq('id', currentUser.id).single();
     const miNombre = (myProfile && myProfile.nombre) || currentUser.email;
 
@@ -1799,14 +1789,52 @@
       texto,
     });
     await loadMessages();
+  }
 
-    if (avisar && chatToId) {
-      fetch(SUPABASE_URL + '/functions/v1/send-chat', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to_user_id: chatToId, from_nombre: miNombre }),
-      }).catch(() => {});
-    }
+  /* ---------- POPUP DE MENSAJE NUEVO ---------- */
+  const notifiedMsgIds = new Set();
+  let msgPollInterval = null;
+
+  function showMsgToast(matchId, fromNombre, fromId) {
+    // No repetir si ya hay un toast visible
+    const prev = document.getElementById('msg-toast');
+    if (prev) prev.remove();
+    const toast = document.createElement('div');
+    toast.id = 'msg-toast';
+    toast.style.cssText = 'position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:10000;background:#111827;color:#fff;border-radius:14px;padding:14px 18px;box-shadow:0 8px 24px rgba(0,0,0,0.35);display:flex;align-items:center;gap:10px;cursor:pointer;max-width:92vw;animation:up 0.25s ease';
+    toast.innerHTML = `<span style="font-size:1.3rem">💬</span><span style="font-size:0.95rem"><b>${escapeHtml(fromNombre)}</b> te ha escrito</span>`;
+    toast.onclick = () => { toast.remove(); openChat(matchId, fromNombre, '', fromId); };
+    document.body.appendChild(toast);
+    setTimeout(() => { if (toast.parentNode) toast.remove(); }, 6000);
+  }
+
+  async function checkNuevosMensajes() {
+    if (!currentUser) return;
+    const [{ data: env }, { data: rec }] = await Promise.all([
+      sb.from('solicitudes_match').select('id').eq('from_id', currentUser.id).eq('estado', 'aceptado'),
+      sb.from('solicitudes_match').select('id').eq('to_id', currentUser.id).eq('estado', 'aceptado'),
+    ]);
+    const ids = [...(env || []), ...(rec || [])].map(m => m.id);
+    if (ids.length === 0) return;
+    const { data: noLeidos } = await sb.from('mensajes')
+      .select('id,match_id,from_id,from_nombre')
+      .in('match_id', ids)
+      .neq('from_id', currentUser.id)
+      .eq('leido', false)
+      .order('created_at', { ascending: false });
+    if (!noLeidos || noLeidos.length === 0) return;
+    // Actualizar el numerito de la campana
+    loadNotifications(false);
+    // Popup solo para mensajes que no hemos avisado ya y cuyo chat no está abierto
+    const nuevo = noLeidos.find(m => !notifiedMsgIds.has(m.id) && m.match_id !== chatMatchId);
+    noLeidos.forEach(m => notifiedMsgIds.add(m.id));
+    if (nuevo) showMsgToast(nuevo.match_id, nuevo.from_nombre || 'Alguien', nuevo.from_id);
+  }
+
+  function startMsgPolling() {
+    clearInterval(msgPollInterval);
+    msgPollInterval = setInterval(checkNuevosMensajes, 15000);
+    checkNuevosMensajes();
   }
 
   function closeChat() {
@@ -2096,6 +2124,7 @@
         document.getElementById('perfil-btn').style.display = 'inline-block';
         checkProfile(currentUser);
         loadNotifications();
+        startMsgPolling();
       }
     } catch (err) {
       msg.textContent = 'Error: ' + (err.message || err);
@@ -2211,6 +2240,7 @@
       document.getElementById('perfil-btn').style.display = 'inline-block';
       await checkProfile(currentUser);
       await loadNotifications();
+      startMsgPolling();
     } else {
       document.getElementById('auth-screen').classList.add('show');
     }
