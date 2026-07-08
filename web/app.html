@@ -398,6 +398,7 @@
         <p id="ep-msg" style="font-size:0.85rem;text-align:center;min-height:18px;color:#16a34a"></p>
       </form>
       <button id="perfil-logout-btn" onclick="cerrarSesion()" style="width:100%;margin-top:8px;padding:13px;background:#f1f5f9;color:#ef4444;border:none;border-radius:10px;font-weight:800;font-size:1rem;cursor:pointer">Cerrar sesión</button>
+      <p id="push-diag" style="margin-top:10px;font-size:0.7rem;color:#9ca3af;text-align:center;word-break:break-all"></p>
     </div>
   </div>
 
@@ -489,7 +490,7 @@
   </div>
 
   <footer>
-    SportMatch · Beta v23 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
+    SportMatch · Beta v24 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
   </footer>
 </div>
 
@@ -2250,6 +2251,22 @@
     }
     document.getElementById('ep-msg').textContent = '';
     document.getElementById('perfil-overlay').classList.add('open');
+
+    // Diagnóstico push (temporal)
+    const diag = document.getElementById('push-diag');
+    if (diag) {
+      const standalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+      const info = `App instalada: ${standalone ? 'sí' : 'NO'} · Permiso: ${('Notification' in window) ? Notification.permission : 'no soportado'}`;
+      diag.textContent = info;
+      if (ONESIGNAL_APP_ID && window.OneSignalDeferred) {
+        OneSignalDeferred.push(OneSignal => {
+          try {
+            const sub = OneSignal.User.PushSubscription;
+            diag.textContent = info + ` · optIn: ${sub.optedIn ? 'sí' : 'no'} · token: ${sub.token ? 'sí' : 'NO'}`;
+          } catch (e) { diag.textContent = info + ' · SDK error: ' + e.message; }
+        });
+      }
+    }
   }
 
   function closePerfil() {
