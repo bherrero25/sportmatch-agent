@@ -354,7 +354,7 @@
       🔔<span id="notif-badge" style="display:none;position:absolute;top:0;right:0;background:#ef4444;color:#fff;font-size:0.65rem;font-weight:900;border-radius:99px;width:16px;height:16px;align-items:center;justify-content:center">0</span>
     </button>
     <button id="perfil-btn" onclick="openPerfil()" style="display:none;background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px 8px">👤</button>
-    <button id="lang-btn" onclick="setLang()" style="background:none;border:none;font-size:1.1rem;cursor:pointer;padding:4px 8px">🇬🇧</button>
+    <button id="lang-btn" onclick="setLang()" style="background:none;border:none;font-size:1.1rem;cursor:pointer;padding:4px 8px">🇪🇸</button>
   </div>
 
   <!-- MODAL PERFIL -->
@@ -478,7 +478,7 @@
   </div>
 
   <footer>
-    SportMatch · Beta v12 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
+    SportMatch · Beta v13 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
   </footer>
 </div>
 
@@ -1975,7 +1975,7 @@
   function applyLang() {
     const isEN = lang === 'en';
     const btn = document.getElementById('lang-btn');
-    if (btn) btn.textContent = isEN ? '🇪🇸' : '🇬🇧';
+    if (btn) btn.textContent = isEN ? '🇬🇧' : '🇪🇸';
     const tabLogin = document.getElementById('tab-login');
     const tabSignup = document.getElementById('tab-signup');
     if (tabLogin) tabLogin.textContent = t('auth.login');
