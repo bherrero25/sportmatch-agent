@@ -2164,11 +2164,9 @@
   });
 
   async function cerrarSesion() {
-    await sb.auth.signOut();
-    currentUser = null;
-    document.getElementById('perfil-overlay').classList.remove('open');
-    document.getElementById('perfil-btn').style.display = 'none';
-    document.getElementById('auth-screen').classList.add('show');
+    try { await sb.auth.signOut(); } catch (_) {}
+    // Recargar deja la librería de auth en estado limpio (evita que el próximo login se cuelgue)
+    location.reload();
   }
 
   async function checkProfile(user) {
