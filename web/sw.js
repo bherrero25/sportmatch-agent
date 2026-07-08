@@ -1,6 +1,4 @@
-importScripts('https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js');
-
-const VERSION = 'v27';
+const VERSION = 'v28';
 const CACHE = 'sportmatch-' + VERSION;
 const ASSETS = ['/', '/app.html', '/index.html', '/manifest.json', '/icon-192.png', '/icon-512.png', '/apple-touch-icon.png'];
 
