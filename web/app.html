@@ -490,7 +490,7 @@
   </div>
 
   <footer>
-    SportMatch · Beta v25 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
+    SportMatch · Beta v26 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
   </footer>
 </div>
 
@@ -2384,6 +2384,24 @@
       try { await OneSignal.User.PushSubscription.optIn(); } catch (_) {}
     });
     document.getElementById('notif-overlay').classList.remove('open');
+
+    // Diagnóstico: probar la suscripción nativa directamente y mostrar el error real
+    setTimeout(async () => {
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        let sub = await reg.pushManager.getSubscription();
+        if (sub) { alert('✅ Suscripción nativa OK: ' + new URL(sub.endpoint).host); return; }
+        const testKey = 'BBjkw6FzxpbslBpR0K3c-TJBqqsMmO_KoP-WLUwoyiJMD1vJPyfHYGXdkLPtChfZrxQHO9vMYG8yyHvswn_5Gro';
+        const pad = '='.repeat((4 - testKey.length % 4) % 4);
+        const raw = atob((testKey + pad).replace(/-/g, '+').replace(/_/g, '/'));
+        const keyArr = Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
+        sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyArr });
+        alert('✅ iOS SÍ puede suscribirse (' + new URL(sub.endpoint).host + '). El problema es del SDK de OneSignal.');
+        await sub.unsubscribe();
+      } catch (e) {
+        alert('❌ Error de suscripción nativa: ' + e.name + ' — ' + e.message);
+      }
+    }, 3000);
   }
 
   if ('serviceWorker' in navigator) {
