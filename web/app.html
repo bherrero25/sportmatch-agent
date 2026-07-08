@@ -489,7 +489,7 @@
   </div>
 
   <footer>
-    SportMatch · Beta v22 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
+    SportMatch · Beta v23 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
   </footer>
 </div>
 
@@ -2344,6 +2344,10 @@
         autoRegister: false,
       });
       if (currentUser) OneSignal.login(currentUser.id);
+      // Si el permiso ya está dado, asegurar que la suscripción push queda activa
+      if ('Notification' in window && Notification.permission === 'granted') {
+        try { await OneSignal.User.PushSubscription.optIn(); } catch (_) {}
+      }
     });
   }
 
@@ -2353,6 +2357,7 @@
     OneSignalDeferred.push(async (OneSignal) => {
       await OneSignal.login(currentUser.id);
       await OneSignal.Notifications.requestPermission();
+      try { await OneSignal.User.PushSubscription.optIn(); } catch (_) {}
     });
     document.getElementById('notif-overlay').classList.remove('open');
   }
