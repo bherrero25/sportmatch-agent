@@ -489,7 +489,7 @@
   </div>
 
   <footer>
-    SportMatch · Beta v18 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
+    SportMatch · Beta v19 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
   </footer>
 </div>
 
@@ -2398,6 +2398,22 @@
     if (error) { msg.textContent = t('misc.publish_error'); btn.disabled = false; btn.textContent = t('proponer.btn'); return; }
     document.getElementById('proponer-overlay').classList.remove('open');
     await loadPartidas(current.name);
+
+    // Avisar por email a todos los usuarios de este deporte
+    fetch(SUPABASE_URL + '/functions/v1/send-partida', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        creador_id: currentUser.id,
+        creador_nombre: perfil?.nombre || currentUser.email,
+        deporte_key: current.key,
+        deporte: current.name,
+        deporte_emoji: current.emoji,
+        ciudad: document.getElementById('pp-ciudad').value.trim(),
+        fecha: document.getElementById('pp-fecha').value,
+        hora: document.getElementById('pp-hora').value.slice(0, 5),
+      }),
+    }).catch(() => {});
   });
 
   async function loadPartidas(deporte) {
