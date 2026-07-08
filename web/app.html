@@ -490,7 +490,7 @@
   </div>
 
   <footer>
-    SportMatch · Beta v24 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
+    SportMatch · Beta v25 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
   </footer>
 </div>
 
@@ -2259,11 +2259,18 @@
       const info = `App instalada: ${standalone ? 'sí' : 'NO'} · Permiso: ${('Notification' in window) ? Notification.permission : 'no soportado'}`;
       diag.textContent = info;
       if (ONESIGNAL_APP_ID && window.OneSignalDeferred) {
-        OneSignalDeferred.push(OneSignal => {
+        OneSignalDeferred.push(async OneSignal => {
+          let extra = '';
           try {
             const sub = OneSignal.User.PushSubscription;
-            diag.textContent = info + ` · optIn: ${sub.optedIn ? 'sí' : 'no'} · token: ${sub.token ? 'sí' : 'NO'}`;
-          } catch (e) { diag.textContent = info + ' · SDK error: ' + e.message; }
+            extra += ` · optIn: ${sub.optedIn ? 'sí' : 'no'} · token: ${sub.token ? 'sí' : 'NO'}`;
+          } catch (e) { extra += ' · SDK error: ' + e.message; }
+          try {
+            const reg = await navigator.serviceWorker.ready;
+            const nativa = await reg.pushManager.getSubscription();
+            extra += ` · sub nativa: ${nativa ? 'sí (' + new URL(nativa.endpoint).host + ')' : 'NO'}`;
+          } catch (e) { extra += ' · nativa error: ' + e.message; }
+          diag.textContent = info + extra;
         });
       }
     }
