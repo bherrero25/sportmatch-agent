@@ -489,7 +489,7 @@
   </div>
 
   <footer>
-    SportMatch · Beta v16 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
+    SportMatch · Beta v17 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
   </footer>
 </div>
 
@@ -993,14 +993,48 @@
       : `<div style="width:44px;height:44px;border-radius:50%;background:#16a34a;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.1rem;flex-shrink:0">${escapeHtml((p.nombre||'?').charAt(0).toUpperCase())}</div>`;
     const s = p.deporte && SPORT_BY_KEY[p.deporte];
     const deporteTxt = s ? `${s.emoji} ${sportName(s)}` : (p.deporte || '');
+    const fname = (p.nombre || 'Deportista').split(' ')[0];
     return `<div style="display:flex;align-items:center;gap:12px;background:#f0fdf4;border-radius:12px;padding:12px;margin-bottom:8px;border:1.5px solid #bbf7d0">
-      ${avatarHtml}
-      <div style="flex:1">
-        <p style="font-weight:800;margin:0">${escapeHtml(p.nombre||'Deportista')}</p>
-        <p style="color:#6b7280;font-size:0.85rem;margin:2px 0 0">${deporteTxt}${p.ciudad ? ' · ' + escapeHtml(p.ciudad) : ''}</p>
+      <div onclick="verPerfilUsuario('${p.id}')" style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;cursor:pointer">
+        ${avatarHtml}
+        <div style="flex:1;min-width:0">
+          <p style="font-weight:800;margin:0">${escapeHtml(p.nombre||'Deportista')}</p>
+          <p style="color:#6b7280;font-size:0.85rem;margin:2px 0 0">${deporteTxt}${p.ciudad ? ' · ' + escapeHtml(p.ciudad) : ''}</p>
+        </div>
       </div>
-      <button onclick="verPerfilUsuario('${p.id}')" style="background:#16a34a;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:0.85rem;font-weight:800;cursor:pointer">${t('contacts.view')}</button>
+      <button id="amigo-jugar-${p.id}" onclick="invitarAJugar('${p.id}','${fname.replace(/'/g,"\\'")}','${p.deporte || ''}')" style="background:#16a34a;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:0.85rem;font-weight:800;cursor:pointer;flex-shrink:0">${(s ? s.emoji + ' ' : '')}${t('contacts.play')}</button>
     </div>`;
+  }
+
+  async function invitarAJugar(uid, fname, deporteKey) {
+    if (!currentUser) return;
+    const btn = document.getElementById('amigo-jugar-' + uid);
+    if (btn) { btn.disabled = true; btn.textContent = '…'; }
+    const s = SPORT_BY_KEY[deporteKey];
+    const deporteNombre = s ? s.name : (deporteKey || 'Deporte');
+    const deporteEmoji = s ? s.emoji : '🏅';
+    const { data: myProfile } = await sb.from('profiles').select('nombre').eq('id', currentUser.id).single();
+    const fromNombre = (myProfile && myProfile.nombre) || currentUser.email;
+    const { error } = await sb.from('solicitudes_match').insert({
+      from_id: currentUser.id,
+      from_nombre: fromNombre,
+      to_id: uid,
+      to_nombre: fname,
+      deporte: deporteNombre,
+      deporte_emoji: deporteEmoji,
+    });
+    if (btn) {
+      if (error) { btn.disabled = false; btn.textContent = t('contacts.play'); return; }
+      btn.textContent = t('contacts.sent');
+      btn.style.background = '#f1f5f9';
+      btn.style.color = '#16a34a';
+    }
+    // Email de aviso al amigo
+    fetch(SUPABASE_URL + '/functions/v1/send-match', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to_user_id: uid, from_nombre: fromNombre, deporte: deporteNombre, deporte_emoji: deporteEmoji }),
+    }).catch(() => {});
   }
 
   let amigoSearchTimer = null;
@@ -1910,6 +1944,7 @@
       'contacts.email_hint':'Busca a un amigo por su email o invítale a SportMatch:',
       'contacts.name_hint':'Busca a tus amigos por nombre:',
       'contacts.name_placeholder':'Nombre de tu amigo…',
+      'contacts.play':'Jugar','contacts.sent':'✓ Enviada',
       'contacts.invite':'📣 Invitar amigos','contacts.not_found':'No está en SportMatch todavía. ¡Invítale!',
       'contacts.invite_text':'¡Únete a SportMatch y encontremos con quién jugar!','contacts.copied':'Enlace copiado. ¡Pégalo donde quieras!',
       'contacts.sports':'Deportes con jugadores en','contacts.no_city':'No hay jugadores registrados en',
@@ -1958,6 +1993,7 @@
       'contacts.email_hint':'Find a friend by email or invite them to SportMatch:',
       'contacts.name_hint':'Find your friends by name:',
       'contacts.name_placeholder':'Your friend\'s name…',
+      'contacts.play':'Play','contacts.sent':'✓ Sent',
       'contacts.invite':'📣 Invite friends','contacts.not_found':'Not on SportMatch yet. Invite them!',
       'contacts.invite_text':'Join SportMatch and let\'s find someone to play with!','contacts.copied':'Link copied. Paste it anywhere!',
       'contacts.sports':'Sports with players in','contacts.no_city':'No registered players in',
