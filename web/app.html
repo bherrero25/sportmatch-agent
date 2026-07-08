@@ -478,7 +478,7 @@
   </div>
 
   <footer>
-    SportMatch · Beta · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
+    SportMatch · Beta v12 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
   </footer>
 </div>
 
@@ -2280,7 +2280,14 @@
     } catch (e) { console.log('Push error:', e); }
   }
 
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/sw.js');
+    // Cuando llega una versión nueva del service worker, recargar una vez para estrenarla
+    let swRecargado = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!swRecargado) { swRecargado = true; location.reload(); }
+    });
+  }
 
   /* ---------- PARTIDAS ---------- */
   function abrirProponerPartida() {
