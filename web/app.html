@@ -489,7 +489,7 @@
   </div>
 
   <footer>
-    SportMatch · Beta v21 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
+    SportMatch · Beta v22 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
   </footer>
 </div>
 
@@ -2313,6 +2313,11 @@
     if (data.session) {
       currentUser = data.session.user;
       document.getElementById('perfil-btn').style.display = 'inline-block';
+      // Vincular usuario con OneSignal (para que los push lleguen a su móvil)
+      if (ONESIGNAL_APP_ID) {
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        OneSignalDeferred.push(OneSignal => OneSignal.login(currentUser.id).catch(() => {}));
+      }
       await checkProfile(currentUser);
       await loadNotifications();
       startMsgPolling();
