@@ -858,9 +858,41 @@
   let cityQuery = '';
   let homeCityValue = '';
 
+  let homeCityTimer = null;
   function onHomeCityInput() {
     homeCityValue = document.getElementById('home-city').value.trim();
     document.getElementById('home-city-clear').style.display = homeCityValue ? 'block' : 'none';
+    clearTimeout(homeCityTimer);
+    if (homeCityValue.length >= 2) {
+      homeCityTimer = setTimeout(() => buscarDeportesPorCiudad(homeCityValue), 400);
+    } else {
+      const el = document.getElementById('home-sports-ciudad');
+      if (el) el.remove();
+    }
+  }
+
+  async function buscarDeportesPorCiudad(ciudad) {
+    const { data } = await sb.from('profiles')
+      .select('deporte')
+      .ilike('ciudad', `%${ciudad}%`)
+      .not('deporte', 'is', null);
+    let existing = document.getElementById('home-sports-ciudad');
+    if (!existing) {
+      existing = document.createElement('div');
+      existing.id = 'home-sports-ciudad';
+      existing.style.cssText = 'padding:0 18px 8px';
+      document.getElementById('sport-grid').before(existing);
+    }
+    if (!data || data.length === 0) {
+      existing.innerHTML = `<p style="color:#9ca3af;font-size:0.85rem;padding:8px 0">No hay jugadores registrados en ${escapeHtml(ciudad)} aún.</p>`;
+      return;
+    }
+    const deportes = [...new Set(data.map(d => d.deporte))];
+    const sports = deportes.map(key => SPORTS.find(s => s.key === key)).filter(Boolean);
+    existing.innerHTML = `<p style="font-size:0.75rem;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Deportes con jugadores en ${escapeHtml(ciudad)}</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">${sports.map(s => `
+        <button onclick="openSport('${s.key}')" style="background:#f0fdf4;border:1.5px solid #bbf7d0;color:#16a34a;border-radius:99px;padding:7px 14px;font-size:0.9rem;font-weight:700;cursor:pointer">${s.emoji} ${s.name}</button>
+      `).join('')}</div>`;
   }
 
   function clearHomeCity() {
@@ -1373,7 +1405,10 @@
               <p style="color:#374151;font-size:0.85rem;margin:0">${s.deporte_emoji} ${s.deporte}</p>
             </div>
           </div>
-          <button onclick="document.getElementById('notif-overlay').classList.remove('open'); openChat('${s.id}','${otroNombre.replace(/'/g,"\\'")}','${otroAvatar}','${otroId}');" style="${btnStyle}">${btnLabel}</button>
+          <div style="display:flex;gap:8px">
+            <button onclick="verPerfilUsuario('${otroId}')" style="padding:10px 14px;background:#f1f5f9;color:#374151;border:none;border-radius:8px;font-weight:700;cursor:pointer">👤 Perfil</button>
+            <button onclick="document.getElementById('notif-overlay').classList.remove('open'); openChat('${s.id}','${otroNombre.replace(/'/g,"\\'")}','${otroAvatar}','${otroId}');" style="flex:1;${btnStyle}">${btnLabel}</button>
+          </div>
         </div>`;
       }).join('');
     }
@@ -1388,6 +1423,28 @@
             <button onclick="responderMatch('${s.id}','rechazado',this)" style="flex:1;padding:10px;background:#f1f5f9;color:#374151;border:none;border-radius:8px;font-weight:700;cursor:pointer">✕ Rechazar</button>
           </div>
         </div>`).join('');
+    }
+
+    // Apuntados recientes a mis partidas
+    const { data: misPartidas } = await sb.from('partidas').select('id,deporte_emoji,deporte,ciudad').eq('creador_id', currentUser.id);
+    if (misPartidas && misPartidas.length > 0) {
+      const misIds = misPartidas.map(p => p.id);
+      const { data: nuevosApuntados } = await sb.from('partida_apuntados')
+        .select('user_nombre,partida_id,created_at')
+        .in('partida_id', misIds)
+        .neq('user_id', currentUser.id)
+        .order('created_at', { ascending: false })
+        .limit(5);
+      if (nuevosApuntados && nuevosApuntados.length > 0) {
+        const partidaMap = Object.fromEntries(misPartidas.map(p => [p.id, p]));
+        html += '<p style="font-size:0.8rem;font-weight:800;color:#374151;margin:12px 0 8px">🏟️ NUEVOS EN TUS PARTIDAS</p>';
+        html += nuevosApuntados.map(a => {
+          const p = partidaMap[a.partida_id];
+          return `<div style="background:#fff;border-radius:12px;padding:12px 16px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,0.07)">
+            <p style="font-weight:700;margin:0">${p.deporte_emoji} <b>${escapeHtml(a.user_nombre)}</b> se apuntó a tu partida de ${p.deporte} en ${escapeHtml(p.ciudad)}</p>
+          </div>`;
+        }).join('');
+      }
     }
 
     if (!html) html = '<p style="color:#9ca3af;text-align:center;padding:20px">No tienes solicitudes.</p>';
@@ -1410,6 +1467,28 @@
   /* ---------- CHAT REAL ---------- */
   let chatMatchId = null;
   let chatPollInterval = null;
+
+  async function verPerfilUsuario(userId) {
+    const { data: p } = await sb.from('profiles').select('*').eq('id', userId).single();
+    if (!p) return;
+    const { data: vals } = await sb.from('valoraciones').select('estrellas').eq('to_id', userId);
+    const media = vals && vals.length > 0
+      ? (vals.reduce((a, b) => a + b.estrellas, 0) / vals.length).toFixed(1)
+      : null;
+    const nivelTexto = p.nivel === 1 ? 'Principiante' : p.nivel === 3 ? 'Avanzado' : 'Intermedio';
+    const avatarHtml = p.avatar_url
+      ? `<img src="${p.avatar_url}" style="width:72px;height:72px;border-radius:50%;object-fit:cover;margin-bottom:10px" />`
+      : `<div style="width:72px;height:72px;border-radius:50%;background:#16a34a;color:#fff;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:800;margin:0 auto 10px">${escapeHtml((p.nombre||'?').charAt(0).toUpperCase())}</div>`;
+    document.getElementById('profile-modal').innerHTML = `
+      <div class="modal-head"><h3>${escapeHtml(p.nombre || 'Deportista')}</h3><button class="modal-close" onclick="closeProfile()">✕</button></div>
+      <div style="text-align:center;padding:16px 0 8px">
+        ${avatarHtml}
+        ${media ? `<div style="font-size:1rem;margin-bottom:4px">⭐ ${media} / 5</div>` : ''}
+        ${p.ciudad ? `<p style="color:#6b7280;font-size:0.9rem;margin:4px 0">📍 ${escapeHtml(p.ciudad)}</p>` : ''}
+        ${p.deporte ? `<p style="color:#6b7280;font-size:0.9rem;margin:4px 0">${escapeHtml(p.deporte)} · ${nivelTexto}</p>` : ''}
+      </div>`;
+    document.getElementById('profile-overlay').classList.add('open');
+  }
 
   function togglePass() {
     const input = document.getElementById('auth-pass');
