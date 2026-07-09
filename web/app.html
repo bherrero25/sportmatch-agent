@@ -490,7 +490,7 @@
   </div>
 
   <footer>
-    SportMatch · Beta v28 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
+    SportMatch · Beta v29 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
   </footer>
 </div>
 
@@ -1659,8 +1659,17 @@
           <p style="color:${nuevos > 0 ? '#111' : '#9ca3af'};font-weight:${nuevos > 0 ? '700' : '400'};font-size:0.88rem;margin:2px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(preview)}</p>
         </div>
         ${nuevos > 0 ? `<span style="background:#16a34a;color:#fff;font-size:0.75rem;font-weight:900;border-radius:99px;min-width:22px;height:22px;display:flex;align-items:center;justify-content:center;padding:0 6px;flex-shrink:0">${nuevos}</span>` : ''}
+        <button onclick="event.stopPropagation(); borrarChat('${s.id}','${otroNombre.replace(/'/g,"\\'")}')" style="background:none;border:none;font-size:1rem;cursor:pointer;padding:6px;color:#9ca3af;flex-shrink:0">🗑️</button>
       </div>`;
     }).join('');
+  }
+
+  async function borrarChat(matchId, otroNombre) {
+    if (!confirm(t('chats.delete_confirm').replace('{n}', otroNombre))) return;
+    // Borrar el match elimina también sus mensajes (on delete cascade)
+    await sb.from('solicitudes_match').delete().eq('id', matchId);
+    await openChats();
+    checkNuevosMensajes();
   }
 
   async function responderMatch(id, estado, btn) {
@@ -1944,6 +1953,7 @@
     'notif.push_hint':'Activa las notificaciones para enterarte al momento cuando alguien quiera jugar contigo','notif.push_btn':'🔔 Activar notificaciones',
       'match.profile':'👤 Perfil','match.confirmed':'¡Match confirmado!',
       'chats.empty':'Aún no tienes chats. ¡Haz un match!',
+    'chats.delete_confirm':'¿Borrar el chat con {n}? Se eliminará el match y todos los mensajes para los dos.',
     'chat.placeholder':'Escribe un mensaje…','chat.say_hi':'¡Di hola! 👋','chat.rate':'⭐ Valorar',
       'chat.loading':'Cargando…','chat.sportmatch':'SportMatch',
       'rate.title':'⭐ Valorar partida','rate.sub':'¿Cómo fue jugar con','rate.comment':'Comentario opcional…','rate.btn':'Guardar valoración',
@@ -1994,6 +2004,7 @@
     'notif.push_hint':'Turn on notifications to know right away when someone wants to play with you','notif.push_btn':'🔔 Enable notifications',
       'match.profile':'👤 Profile','match.confirmed':'Match confirmed!',
       'chats.empty':'No chats yet. Make a match!',
+    'chats.delete_confirm':'Delete the chat with {n}? The match and all messages will be removed for both of you.',
     'chat.placeholder':'Write a message…','chat.say_hi':'Say hi! 👋','chat.rate':'⭐ Rate',
       'chat.loading':'Loading…','chat.sportmatch':'SportMatch',
       'rate.title':'⭐ Rate the game','rate.sub':'How was playing with','rate.comment':'Optional comment…','rate.btn':'Save rating',

@@ -1,4 +1,4 @@
-const VERSION = 'v28';
+const VERSION = 'v29';
 const CACHE = 'sportmatch-' + VERSION;
 const ASSETS = ['/', '/app.html', '/index.html', '/manifest.json', '/icon-192.png', '/icon-512.png', '/apple-touch-icon.png'];
 
