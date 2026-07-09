@@ -490,7 +490,7 @@
   </div>
 
   <footer>
-    SportMatch · Beta v29 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
+    SportMatch · Beta v30 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
   </footer>
 </div>
 
@@ -1667,7 +1667,11 @@
   async function borrarChat(matchId, otroNombre) {
     if (!confirm(t('chats.delete_confirm').replace('{n}', otroNombre))) return;
     // Borrar el match elimina también sus mensajes (on delete cascade)
-    await sb.from('solicitudes_match').delete().eq('id', matchId);
+    const { error, count } = await sb.from('solicitudes_match').delete({ count: 'exact' }).eq('id', matchId);
+    if (error || !count) {
+      alert('No se pudo borrar el chat' + (error ? ': ' + error.message : ' (permiso denegado)'));
+      return;
+    }
     await openChats();
     checkNuevosMensajes();
   }
