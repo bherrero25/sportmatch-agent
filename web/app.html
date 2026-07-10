@@ -490,7 +490,7 @@
   </div>
 
   <footer>
-    SportMatch · Beta v30 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
+    SportMatch · Beta v31 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
   </footer>
 </div>
 
@@ -2418,6 +2418,59 @@
       if (!swRecargado) { swRecargado = true; location.reload(); }
     });
   }
+
+  /* ---------- GUÍA DE INSTALACIÓN (PWA) ---------- */
+  let deferredInstallPrompt = null;
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstallPrompt = e; });
+
+  (function guiaInstalacion() {
+    const standalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+    const esMovil = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (standalone || !esMovil) return;
+    if (sessionStorage.getItem('sm_install_skip')) return;
+
+    const esIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const pasos = esIOS
+      ? `<div style="display:flex;flex-direction:column;gap:14px;text-align:left;margin:18px 0">
+          <div style="display:flex;gap:12px;align-items:center"><span style="background:#16a34a;color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0">1</span><span>Toca el botón <b>Compartir</b> <span style="font-size:1.2rem">⬆️</span> abajo en Safari</span></div>
+          <div style="display:flex;gap:12px;align-items:center"><span style="background:#16a34a;color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0">2</span><span>Baja y elige <b>"Añadir a pantalla de inicio"</b> <span style="font-size:1.2rem">➕</span></span></div>
+          <div style="display:flex;gap:12px;align-items:center"><span style="background:#16a34a;color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0">3</span><span>Abre <b>SportMatch</b> desde el icono nuevo 🎾</span></div>
+        </div>`
+      : `<div style="display:flex;flex-direction:column;gap:14px;text-align:left;margin:18px 0">
+          <div style="display:flex;gap:12px;align-items:center"><span style="background:#16a34a;color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0">1</span><span>Toca el menú <b>⋮</b> arriba a la derecha</span></div>
+          <div style="display:flex;gap:12px;align-items:center"><span style="background:#16a34a;color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0">2</span><span>Elige <b>"Añadir a pantalla de inicio"</b></span></div>
+          <div style="display:flex;gap:12px;align-items:center"><span style="background:#16a34a;color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0">3</span><span>Abre <b>SportMatch</b> desde el icono nuevo 🎾</span></div>
+        </div>`;
+
+    const div = document.createElement('div');
+    div.id = 'install-guide';
+    div.style.cssText = 'position:fixed;inset:0;z-index:10001;background:#fff;display:flex;align-items:center;justify-content:center;padding:24px';
+    div.innerHTML = `
+      <div style="max-width:360px;text-align:center">
+        <div style="font-size:1.6rem;font-weight:900;letter-spacing:-0.5px;margin-bottom:6px">Sport<em style="font-style:normal;color:#16a34a">Match</em></div>
+        <p style="font-size:1.05rem;font-weight:800;margin-bottom:4px">Instala la app en tu móvil</p>
+        <p style="color:#6b7280;font-size:0.9rem">Es gratis, tarda 10 segundos y así recibes avisos cuando alguien quiera jugar contigo.</p>
+        ${pasos}
+        <button id="install-native-btn" style="display:none;width:100%;padding:14px;background:#16a34a;color:#fff;border:none;border-radius:12px;font-weight:800;font-size:1rem;cursor:pointer;margin-bottom:10px">⬇️ Instalar SportMatch</button>
+        <button onclick="sessionStorage.setItem('sm_install_skip','1');document.getElementById('install-guide').remove()" style="background:none;border:none;color:#9ca3af;font-size:0.85rem;cursor:pointer;text-decoration:underline">Seguir en el navegador</button>
+      </div>`;
+    document.body.appendChild(div);
+
+    // En Android Chrome se puede instalar con un toque
+    const nativeBtn = document.getElementById('install-native-btn');
+    const checkPrompt = setInterval(() => {
+      if (deferredInstallPrompt && nativeBtn) {
+        nativeBtn.style.display = 'block';
+        nativeBtn.onclick = async () => {
+          deferredInstallPrompt.prompt();
+          const { outcome } = await deferredInstallPrompt.userChoice;
+          if (outcome === 'accepted') document.getElementById('install-guide').remove();
+        };
+        clearInterval(checkPrompt);
+      }
+    }, 500);
+    setTimeout(() => clearInterval(checkPrompt), 10000);
+  })();
 
   /* ---------- PARTIDAS ---------- */
   // Máximo de jugadores por deporte (contando al creador)
