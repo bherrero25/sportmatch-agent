@@ -21,86 +21,85 @@
 
 ## ✅ FASE 2 — Web en tu dominio, gratis (HECHO)
 - [x] Hosting en Cloudflare Pages — `sportmatchapp.es` online con SSL
-- [x] Copia de seguridad en Git (rama main)
+- [x] Copia de seguridad en Git (rama main) + auto-deploy desde GitHub
 - [x] Prototipo con gancho: TikTok feed, radar, encuesta, chat de ejemplo
+- [x] PWA instalable en móvil
 
 ---
 
-## 🔜 FASE 3 — Captar emails de verdad (ESTAMOS AQUÍ)
-
-**Objetivo:** que cada persona que se apunte quede guardada y tú recibas un email avisándote.
-
-### Paso 3.1 — Base de datos ✅ HECHO
+## ✅ FASE 3 — Captar emails de verdad (HECHO)
 - [x] Supabase creado (`jhyykkgastbwrqlaryeu.supabase.co`)
-- [x] Tabla `lista_espera` creada con campos: nombre, email, deporte, nivel, origen
-- [x] Formulario de `sportmatchapp.es` conectado a Supabase — **registros guardándose**
-
-### Paso 3.2 — Email de aviso ✅ HECHO
-- [x] Edge Function `notify-signup` desplegada en Supabase
-- [x] Dominio `sportmatchapp.es` verificado en Resend (cuenta `betsabe@cypa.es`)
-- [x] Emails salen desde `noreply@sportmatchapp.es` y llegan a `betsabe@cypa.es`
-- [x] CORS arreglado para que funcione desde el navegador
-
-### Paso 3.3 — Email de bienvenida al que se apunta ⏳
-- [ ] Cuando alguien se apunte, recibe un email: "¡Estás en la lista! Te avisamos cuando haya gente cerca."
-- **Coste:** 0€ (incluido en Resend)
+- [x] Tabla `lista_espera` con nombre, email, deporte, nivel
+- [x] Formulario de `sportmatchapp.es` conectado — registros guardándose
+- [x] Email de aviso a betsabe@cypa.es cuando alguien se apunta
+- [x] Email de bienvenida al que se apunta (desde `noreply@sportmatchapp.es`)
+- [x] Dominio `sportmatchapp.es` verificado en Resend (DKIM + SPF)
 
 ---
 
-## ⏳ FASE 4 — El producto real (perfiles + match)
-
-**Objetivo:** que la gente cree su cuenta, ponga su perfil deportivo y vea jugadores compatibles cerca.
-
-- [ ] Registro e inicio de sesión (Supabase Auth)
-- [ ] Perfil por deporte: nivel, ritmo, actitud, idioma
-- [ ] "Estoy en [ciudad] del [fecha] al [fecha]"
-- [ ] Feed de jugadores compatibles en esa ciudad esas fechas
-- **Coste:** 0€ en Supabase plan gratuito para empezar
+## ✅ FASE 4 — El producto real (perfiles + match) (HECHO)
+- [x] Registro e inicio de sesión (Supabase Auth)
+- [x] Pantalla de perfil: nombre, deporte, nivel, ciudad
+- [x] Feed real: los usuarios registrados aparecen en el feed de su deporte
+- [x] Buscador de ciudad en el feed
+- [x] 12 deportes: golf, pádel, tenis, running, senderismo, esquí, escalada, baloncesto, fútbol, ciclismo, surf, submarinismo
+- [x] Encuestas de nivel por deporte
 
 ---
 
-## ⏳ FASE 5 — El match y el chat
+## 🔜 FASE 5 — El match y el chat (ESTAMOS AQUÍ)
 
-- [ ] Match mutuo: cuando dos jugadores se marcan como "jugar", se crea un chat
-- [ ] Chat dentro de la app
-- [ ] Notificación push: "¡Nuevo jugador compatible en tu ciudad!"
+### ✅ Match mutuo — HECHO
+- [x] Botón "Quiero jugar con X" en tarjeta y ficha de usuario real
+- [x] Solicitudes guardadas en tabla `solicitudes_match`
+- [x] Campana 🔔 con número de solicitudes pendientes
+- [x] Panel de solicitudes: aceptar / rechazar
+- [x] Email de aviso al recibir una solicitud
+- [x] Notificación en app cuando tu solicitud es aceptada
+- [x] Texto personalizado por deporte ("escalar", "surfear", "jugar al golf"…)
+
+### 🔜 Chat real — SIGUIENTE
+- [ ] Cuando dos usuarios hacen match mutuo, se abre un chat entre ellos
+- [ ] Mensajes guardados en Supabase en tiempo real
+- [ ] Notificación de nuevo mensaje en la campana
+
+### ⏳ Notificaciones push
+- [ ] Integrar OneSignal (iOS + Android) para notificaciones push reales
+- [ ] Avisar al momento cuando llega una solicitud o un mensaje
 
 ---
 
 ## ⏳ FASE 6 — Beta abierta
-
-- [ ] Lanzamiento a la red del hijo de Betsabé + lista de espera
+- [ ] Lanzamiento a la red de Nicolás + lista de espera actual
 - [ ] Recoger feedback, ajustar
-- [ ] App web instalable (PWA) — ya está lista
+- [ ] Cerrar sesión / cambiar perfil
 
 ---
 
 ## ⏳ FASE 7 — Apps en las tiendas
-
 - [ ] App Store (99€/año) + Google Play (25€ único)
 - *(Solo cuando enganche y merezca la pena)*
 
 ---
 
 ## ⏳ FASE 8 — Ganar dinero
-
 - Suscripción premium, eventos, clubes…
 - *(Cuando haya masa crítica)*
 
 ---
 
-## 🔁 EN PARALELO — Legal (empieza en Fase 4)
-
+## 🔁 EN PARALELO — Legal (empieza en Fase 6)
 - [ ] Política de privacidad + RGPD
 - [ ] Términos de uso
 - [ ] Gestión de menores
 
 ---
 
-## 📍 Dónde estamos ahora
+## 📍 Dónde estamos ahora (3 julio 2026)
 
-**Fases 0, 1, 2 y Paso 3.1 COMPLETADOS.**
+**Fases 0–4 y match mutuo (Fase 5) COMPLETADOS.**
 
-- Web online: `https://sportmatchapp.es`
-- Registros guardándose en Supabase
-- **Siguiente:** Paso 3.2 — notificación por email cuando alguien se apunte
+- Web + app: `https://sportmatchapp.es/app.html`
+- 3 usuarios reales (Betsabé, Isabel, Nicolás)
+- Match funcionando: solicitud → email de aviso → aceptar/rechazar → notificación en app
+- **Siguiente:** chat real entre usuarios que han hecho match

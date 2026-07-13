@@ -373,10 +373,12 @@
     </div>
 
     <div class="success" id="success">
+      <div style="display:flex;justify-content:flex-end"><button class="modal-close" onclick="closeModal()" style="font-size:1.4rem">✕</button></div>
       <div class="ic">✅</div>
       <h3>¡Estás en la lista!</h3>
       <p id="success-text">SportMatch está en fase beta: estamos reuniendo a los primeros jugadores en cada ciudad. Te escribiremos en cuanto haya gente con quien jugar cerca de ti.</p>
       <button class="modal-btn" style="margin-top:18px" onclick="shareLevel()">🔥 Comparte tu nivel y reta a tus amigos</button>
+      <button class="modal-btn" style="margin-top:10px;background:#f1f5f9;color:#374151" onclick="closeModal()">Cerrar</button>
       <p class="modal-fine">Genera tu tarjeta y súbela a tu story. Cuantos más seáis, antes jugáis.</p>
     </div>
   </div>
@@ -445,6 +447,30 @@
         { name:'Leo M.', age:24, loc:'Madrid · pistas de barrio', lv:2, km:3, tags:['Intermedio','3x3','Tardes'], bio:'Siempre faltan jugadores en la pista. Busco gente fija para echar partidos.', img:'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=600&q=75' },
         { name:'Paula R.', age:22, loc:'Madrid · viaja por la uni', lv:1, km:22, tags:['Principiante','Social','Finde'], bio:'Acabo de mudarme y no conozco a nadie con quien jugar. ¡Ayuda!' },
       ] },
+    { key:'futbol', name:'Fútbol', emoji:'⚽', accent:'#16a34a', dark:'#0f2e1c', light:'#dcfce7',
+      tagline:'Pachangas, 7x7 o fútbol sala con gente de tu nivel.', levelName:'Nivel',
+      profiles:[
+        { name:'Adrián M.', age:28, loc:'Madrid · viaja a Barcelona 15–18 jul', lv:2, km:8, tags:['Aficionado','7x7','Finde','🇪🇸'], bio:'Cuando viajo a otra ciudad me encantaría jugar una pachanga. Busco grupos organizados.', img:'https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=600&q=75' },
+        { name:'Rafa G.', age:33, loc:'Madrid · entre semana', lv:3, km:5, tags:['Avanzado','Sala','Noches'], bio:'Juego fútbol sala entre semana, siempre falta alguien. Busco gente fiable.' },
+      ] },
+    { key:'ciclismo', name:'Ciclismo', emoji:'🚴', accent:'#7c3aed', dark:'#1e0a3c', light:'#ede9fe',
+      tagline:'Rutas en carretera o MTB por nivel y ritmo.', levelName:'Ritmo',
+      profiles:[
+        { name:'Pau C.', age:36, loc:'Barcelona · viaja a Madrid', lv:2, km:40, tags:['Carretera','W/kg 3','Mañanas','🇪🇸'], bio:'Cuando viajo intento salir en bici. Busco gente que conozca las rutas locales.', img:'https://images.unsplash.com/photo-1534787238916-9ba6764efd4f?w=600&q=75' },
+        { name:'Irene V.', age:30, loc:'Madrid · fines de semana', lv:1, km:25, tags:['MTB','Principiante','Sábados'], bio:'Empezando en MTB, busco gente para rutas tranquilas por la sierra.' },
+      ] },
+    { key:'surf', name:'Surf', emoji:'🏄', accent:'#0891b2', dark:'#0c2a33', light:'#cffafe',
+      tagline:'Compañeros de ola por nivel y tipo de surf.', levelName:'Nivel',
+      profiles:[
+        { name:'Alba R.', age:25, loc:'Madrid · viaja a Mundaka este verano', lv:2, km:15, tags:['Intermedio','Ola larga','Mañanas','🇪🇸'], bio:'Viajo a la costa cada vez que puedo. Busco gente para surfear sin ir sola.', img:'https://images.unsplash.com/photo-1502680390469-be75c86b636f?w=600&q=75' },
+        { name:'Kike S.', age:29, loc:'Santander · disponible localmente', lv:3, km:5, tags:['Avanzado','Tubo','Cualquier hora'], bio:'Local de Mundaka. Si visitas el norte y quieres surfear, apúntate.' },
+      ] },
+    { key:'submarinismo', name:'Submarinismo', emoji:'🤿', accent:'#0e7490', dark:'#0c2a33', light:'#a5f3fc',
+      tagline:'Compañero de inmersión donde viajes.', levelName:'Certificación',
+      profiles:[
+        { name:'Carmen L.', age:38, loc:'Madrid · viaja a Lanzarote en agosto', lv:2, km:20, tags:['PADI Advanced','Arrecife','Mañanas','🇬🇧'], bio:'Buceadora con experiencia, viajo sola y siempre busco compañero de inmersión.', img:'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=600&q=75' },
+        { name:'Tomás P.', age:44, loc:'Málaga · disponible localmente', lv:3, km:12, tags:['Divemaster','Cueva','Técnico'], bio:'Divemaster local en la Costa del Sol. Si visitas la zona, encantado de bajar juntos.' },
+      ] },
   ];
 
   const SPORT_BY_KEY = Object.fromEntries(SPORTS.map(s => [s.key, s]));
@@ -491,6 +517,26 @@
       ['Sergio M.', 22, 'Madrid · pistas de barrio', 2, 4, ['Habitual', '3x3'], 'Quedamos a echar partidos, faltan jugadores.'],
       ['Laura D.', 25, 'Madrid · finde', 1, 16, ['Recreativo', 'Social'], 'Acabo de llegar a la ciudad, busco con quién jugar.'],
       ['Dani F.', 27, 'Alcorcón · entre semana', 3, 21, ['Federado', 'Competición'], 'Juego en liga local, busco buen nivel.'],
+    ],
+    futbol: [
+      ['Marcos T.', 26, 'Madrid · entre semana', 2, 6, ['Aficionado', 'Sala'], 'Apuntado en varias ligas de sala, busco contactos nuevos.'],
+      ['Bea R.', 24, 'Madrid · finde', 1, 18, ['Recreativo', '7x7'], 'Primera vez en una pachanga organizada. Busco grupo sin presión.'],
+      ['Jordi P.', 31, 'Barcelona · viaja a Madrid', 3, 10, ['Avanzado', 'Cesped 11'], 'Jugué en categorías regionales. Busco nivel decente cuando viajo.'],
+    ],
+    ciclismo: [
+      ['Rubén A.', 38, 'Madrid · mañanas', 2, 35, ['Carretera', 'W/kg 2.8'], 'Salgo los sábados temprano por la A-6. Hay hueco en el grupo.'],
+      ['Marta L.', 29, 'Madrid · finde', 1, 20, ['MTB', 'Iniciación'], 'Tengo bici pero poca experiencia. Busco gente paciente.'],
+      ['Àlex F.', 34, 'Girona · viaja por trabajo', 3, 60, ['Gran fondo', 'W/kg 4'], 'Ciclista serio. Busco rutas exigentes cuando viajo.'],
+    ],
+    surf: [
+      ['Lucía M.', 23, 'Madrid · viaja a Zarautz', 1, 20, ['Principiante', 'Clases'], 'Primera vez surfeando de verdad. Busco grupo amigable.'],
+      ['Iker Z.', 27, 'Bilbao · disponible', 3, 3, ['Avanzado', 'Competición'], 'Surfeo desde los 10 años. Busco alguien con nivel para sesiones serias.'],
+      ['Noa V.', 25, 'Valencia · viaja al norte', 2, 12, ['Intermedio', 'Longboard'], 'Prefiero olas tranquilas y longboard. Busco compañía.'],
+    ],
+    submarinismo: [
+      ['Pedro M.', 42, 'Madrid · viaja a Canarias', 2, 18, ['PADI Open Water', 'Arrecife'], 'Buceo de vacaciones. Siempre busco compañero para no ir con agencia.'],
+      ['Silvia R.', 35, 'Alicante · disponible', 3, 8, ['Rescue Diver', 'Cueva'], 'Instructora local. Si visitas el Mediterráneo, bajamos juntos.'],
+      ['Óscar N.', 28, 'Madrid · viaja a Croacia', 1, 25, ['Open Water', 'Social'], 'Solo tengo el primer nivel pero me muero de ganas. Busco mentor.'],
     ],
   };
   Object.keys(EXTRA).forEach(k => {
