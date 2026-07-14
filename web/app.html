@@ -300,22 +300,10 @@
     <p id="setup-sub" style="font-size:0.9rem;color:#6b7280;margin-top:-8px">Solo tarda 30 segundos</p>
     <form id="profile-form" style="display:flex;flex-direction:column;gap:12px;width:100%">
       <input id="pf-nombre" type="text" placeholder="Tu nombre" required style="padding:13px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1rem;width:100%" />
-      <select id="pf-deporte" required style="padding:13px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1rem;width:100%;background:#fff;color:#111">
-        <option value="">¿Tu deporte principal?</option>
-        <option value="golf">⛳ Golf</option>
-        <option value="padel">🎾 Pádel</option>
-        <option value="tenis">🎾 Tenis</option>
-        <option value="running">🏃 Running</option>
-        <option value="senderismo">🥾 Senderismo</option>
-        <option value="esqui">⛷️ Esquí</option>
-        <option value="escalada">🧗 Escalada</option>
-        <option value="baloncesto">🏀 Baloncesto</option>
-        <option value="futbol">⚽ Fútbol</option>
-        <option value="ciclismo">🚴 Ciclismo</option>
-        <option value="surf">🏄 Surf</option>
-        <option value="submarinismo">🤿 Submarinismo</option>
-        <option value="pilota">🟡 Pilota Valenciana</option>
-      </select>
+      <div>
+        <p style="font-size:0.85rem;color:#6b7280;margin-bottom:6px;text-align:left">¿Qué deportes practicas? (elige uno o varios)</p>
+        <div id="pf-deportes" data-sel="" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+      </div>
       <select id="pf-nivel" required style="padding:13px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1rem;width:100%;background:#fff;color:#111">
         <option value="">¿Tu nivel?</option>
         <option value="1">Principiante</option>
@@ -372,22 +360,10 @@
           <input id="ep-foto" type="file" accept="image/*" style="display:none" onchange="previewAvatar(this)" />
         </div>
         <input id="ep-nombre" type="text" placeholder="Tu nombre" style="padding:13px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1rem;width:100%" />
-        <select id="ep-deporte" style="padding:13px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1rem;width:100%;background:#fff;color:#111">
-          <option value="">¿Tu deporte principal?</option>
-          <option value="golf">⛳ Golf</option>
-          <option value="padel">🎾 Pádel</option>
-          <option value="tenis">🎾 Tenis</option>
-          <option value="running">🏃 Running</option>
-          <option value="senderismo">🥾 Senderismo</option>
-          <option value="esqui">⛷️ Esquí</option>
-          <option value="escalada">🧗 Escalada</option>
-          <option value="baloncesto">🏀 Baloncesto</option>
-          <option value="futbol">⚽ Fútbol</option>
-          <option value="ciclismo">🚴 Ciclismo</option>
-          <option value="surf">🏄 Surf</option>
-          <option value="submarinismo">🤿 Submarinismo</option>
-          <option value="pilota">🟡 Pilota Valenciana</option>
-        </select>
+        <div>
+          <p style="font-size:0.85rem;color:#6b7280;margin-bottom:6px;text-align:left">¿Qué deportes practicas?</p>
+          <div id="ep-deportes" data-sel="" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+        </div>
         <select id="ep-nivel" style="padding:13px 14px;border-radius:10px;border:1.5px solid #e2e8f0;font-size:1rem;width:100%;background:#fff;color:#111">
           <option value="">¿Tu nivel?</option>
           <option value="1">Principiante</option>
@@ -491,7 +467,7 @@
   </div>
 
   <footer>
-    SportMatch · Beta v33 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
+    SportMatch · Beta v34 · Hecho en España 🇪🇸 · <a href="index.html">Volver a la web</a>
   </footer>
 </div>
 
@@ -695,6 +671,30 @@
   function sportName(s) { return lang === 'en' && SPORT_EN[s.key] ? SPORT_EN[s.key][0] : s.name; }
   function sportTagline(s) { return lang === 'en' && SPORT_EN[s.key] ? SPORT_EN[s.key][1] : s.tagline; }
 
+  /* ---------- CHIPS DE DEPORTES (selección múltiple) ---------- */
+  function renderDeporteChips(cid) {
+    const el = document.getElementById(cid);
+    if (!el) return;
+    const sel = new Set((el.dataset.sel || '').split(',').filter(Boolean));
+    el.innerHTML = SPORTS.map(s => {
+      const on = sel.has(s.key);
+      return `<button type="button" onclick="toggleDeporteChip('${cid}','${s.key}')" style="border-radius:99px;padding:8px 12px;font-size:0.85rem;font-weight:700;cursor:pointer;border:1.5px solid ${on ? '#16a34a' : '#e2e8f0'};background:${on ? '#16a34a' : '#fff'};color:${on ? '#fff' : '#374151'}">${s.emoji} ${sportName(s)}</button>`;
+    }).join('');
+  }
+
+  function toggleDeporteChip(cid, key) {
+    const el = document.getElementById(cid);
+    const sel = new Set((el.dataset.sel || '').split(',').filter(Boolean));
+    sel.has(key) ? sel.delete(key) : sel.add(key);
+    el.dataset.sel = [...sel].join(',');
+    renderDeporteChips(cid);
+  }
+
+  function getDeportesSel(cid) {
+    const el = document.getElementById(cid);
+    return (el?.dataset.sel || '').split(',').filter(Boolean);
+  }
+
   // Perfiles extra (con avatar, sin foto) para tener baraja con la que deslizar.
   // [nombre, edad, ubicación, nivel(1-3), km, tags, bio]
   const EXTRA = {
@@ -819,10 +819,10 @@
       document.getElementById('city-clear').style.display = 'none';
     }
 
-    // Cargar usuarios reales de Supabase para este deporte
+    // Cargar usuarios reales de Supabase para este deporte (cualquiera de sus deportes)
     const { data: realUsers } = await sb.from('profiles')
       .select('id, nombre, nivel, ciudad, email, avatar_url')
-      .eq('deporte', key)
+      .contains('deportes', [key])
       .neq('id', currentUser ? currentUser.id : '')
       .not('ciudad', 'is', null);
 
@@ -1074,9 +1074,9 @@
 
   async function buscarDeportesPorCiudad(ciudad) {
     const { data } = await sb.from('profiles')
-      .select('deporte')
+      .select('deportes')
       .ilike('ciudad', `%${ciudad}%`)
-      .not('deporte', 'is', null);
+      .not('deportes', 'is', null);
     let existing = document.getElementById('home-sports-ciudad');
     if (!existing) {
       existing = document.createElement('div');
@@ -1088,7 +1088,7 @@
       existing.innerHTML = `<p style="color:#9ca3af;font-size:0.85rem;padding:8px 0">${t('contacts.no_city')} ${escapeHtml(ciudad)} aún.</p>`;
       return;
     }
-    const deportes = [...new Set(data.map(d => d.deporte))];
+    const deportes = [...new Set(data.flatMap(d => d.deportes || []))];
     const sports = deportes.map(key => SPORTS.find(s => s.key === key)).filter(Boolean);
     existing.innerHTML = `<p style="font-size:0.75rem;font-weight:800;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">${t('contacts.sports')} ${escapeHtml(ciudad)}</p>
       <div style="display:flex;flex-wrap:wrap;gap:8px">${sports.map(s => `
@@ -2057,6 +2057,9 @@
   }
 
   function applyLang() {
+    // Chips de deportes (respetan la selección actual)
+    renderDeporteChips('pf-deportes');
+    renderDeporteChips('ep-deportes');
     const isEN = lang === 'en';
     const btn = document.getElementById('lang-btn');
     if (btn) btn.textContent = isEN ? '🇬🇧' : '🇪🇸';
@@ -2226,12 +2229,15 @@
     e.preventDefault();
     const btn = document.getElementById('pf-btn');
     const msg = document.getElementById('pf-msg');
+    const deportes = getDeportesSel('pf-deportes');
+    if (deportes.length === 0) { msg.textContent = 'Elige al menos un deporte'; return; }
     btn.disabled = true; btn.textContent = '…';
     const { error } = await sb.from('profiles').upsert({
       id: currentUser.id,
       email: currentUser.email,
       nombre: document.getElementById('pf-nombre').value.trim(),
-      deporte: document.getElementById('pf-deporte').value,
+      deporte: deportes[0],
+      deportes,
       nivel: parseInt(document.getElementById('pf-nivel').value),
       ciudad: document.getElementById('pf-ciudad').value.trim(),
     });
@@ -2252,10 +2258,12 @@
 
   async function openPerfil() {
     if (!currentUser) return;
-    const { data } = await sb.from('profiles').select('nombre,deporte,nivel,ciudad,avatar_url').eq('id', currentUser.id).single();
+    const { data } = await sb.from('profiles').select('nombre,deporte,deportes,nivel,ciudad,avatar_url').eq('id', currentUser.id).single();
     if (data) {
       document.getElementById('ep-nombre').value = data.nombre || '';
-      document.getElementById('ep-deporte').value = data.deporte || '';
+      const misDeportes = (data.deportes && data.deportes.length ? data.deportes : (data.deporte ? [data.deporte] : []));
+      document.getElementById('ep-deportes').dataset.sel = misDeportes.join(',');
+      renderDeporteChips('ep-deportes');
       document.getElementById('ep-nivel').value = data.nivel || '';
       document.getElementById('ep-ciudad').value = data.ciudad || '';
       const preview = document.getElementById('ep-avatar-preview');
@@ -2319,9 +2327,11 @@
       avatar_url = urlData.publicUrl + '?t=' + Date.now();
     }
 
+    const deportesSel = getDeportesSel('ep-deportes');
     const updates = {
       nombre: document.getElementById('ep-nombre').value.trim(),
-      deporte: document.getElementById('ep-deporte').value,
+      deporte: deportesSel[0] || null,
+      deportes: deportesSel,
       nivel: parseInt(document.getElementById('ep-nivel').value) || null,
       ciudad: document.getElementById('ep-ciudad').value.trim(),
     };
@@ -2341,14 +2351,18 @@
   }
 
   async function checkProfile(user) {
-    const { data } = await sb.from('profiles').select('nombre,deporte,nivel,ciudad').eq('id', user.id).single();
-    if (!data || !data.deporte || !data.ciudad) {
+    const { data } = await sb.from('profiles').select('nombre,deporte,deportes,nivel,ciudad').eq('id', user.id).single();
+    if (!data || !(data.deporte || (data.deportes && data.deportes.length)) || !data.ciudad) {
       if (data && data.nombre) document.getElementById('pf-nombre').value = data.nombre;
+      renderDeporteChips('pf-deportes');
       document.getElementById('profile-setup').classList.add('show');
     }
   }
 
   (async function initAuth() {
+    // Pintar la pantalla YA — el resto se carga en segundo plano
+    renderHome();
+    applyLang();
     const { data } = await sb.auth.getSession();
     if (data.session) {
       currentUser = data.session.user;
@@ -2358,14 +2372,13 @@
         window.OneSignalDeferred = window.OneSignalDeferred || [];
         OneSignalDeferred.push(OneSignal => OneSignal.login(currentUser.id).catch(() => {}));
       }
-      await checkProfile(currentUser);
-      await loadNotifications();
+      // En paralelo, sin bloquear la interfaz
+      checkProfile(currentUser);
+      loadNotifications();
       startMsgPolling();
     } else {
       document.getElementById('auth-screen').classList.add('show');
     }
-    renderHome();
-    applyLang();
   })();
   /* ---------- PUSH con OneSignal ---------- */
   const ONESIGNAL_APP_ID = '67c80b34-826f-4472-8773-d0f0f99b081d';
@@ -2533,7 +2546,7 @@
     await loadPartidas(current.name);
 
     // Push a todos los usuarios de este deporte
-    sb.from('profiles').select('id').eq('deporte', current.key).neq('id', currentUser.id).then(({ data: users }) => {
+    sb.from('profiles').select('id').contains('deportes', [current.key]).neq('id', currentUser.id).then(({ data: users }) => {
       if (!users || users.length === 0) return;
       fetch(SUPABASE_URL + '/functions/v1/send-push', {
         method: 'POST',

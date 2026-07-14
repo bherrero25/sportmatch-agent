@@ -18,11 +18,11 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Todos los usuarios que practican ese deporte, menos el creador
+    // Todos los usuarios de ese deporte, menos el creador
     const { data: usuarios } = await supabase
       .from("profiles")
       .select("email, nombre")
-      .contains("deportes", [deporte_key])
+      .eq("deporte", deporte_key)
       .neq("id", creador_id)
       .not("email", "is", null);
 
